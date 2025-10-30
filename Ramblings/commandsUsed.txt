@@ -87,3 +87,20 @@ re-tried:
 
     SAMPLE CAFE LOADED!
 
+    verify data:    
+        from cafes.models import Cafe
+        from django.contrib.gis.geos import Point
+        from django.contrib.gis.db.models.functions import Distance
+
+        my_location = Point(-6.26, 53.34, srid=4326)
+
+        nearby_cafes = (
+            Cafe.objects
+            .annotate(distance=Distance('location', my_location))
+            .order_by('distance')
+        )
+
+        for cafe in nearby_cafes:
+            print(cafe.name, cafe.distance.m)  # distance in meters
+
+
