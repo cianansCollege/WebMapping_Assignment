@@ -1,0 +1,17 @@
+/* Coffee Stained Map – Custom Styles */
+body {
+    background-color: #fdfcf9;
+}
+
+.card-title {
+    color: #6f4e37; /* coffee tone */
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.leaflet-popup-content b {
+    color: #5c4033;
+}

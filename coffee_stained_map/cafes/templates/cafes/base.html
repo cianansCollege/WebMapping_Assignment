@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}City Mapper{% endblock %}</title>
@@ -17,15 +18,6 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'cities:map' %}">🌍 City Mapper</a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="#" id="add-city-btn">Add City</a>
-            </div>
-        </div>
-    </nav>
-
     <main>
         {% block content %}{% endblock %}
     </main>

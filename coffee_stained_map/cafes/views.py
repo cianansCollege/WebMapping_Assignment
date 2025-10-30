@@ -7,3 +7,6 @@ from .serializers import CafeSerializer
 class CafeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Cafe.objects.all()
     serializer_class = CafeSerializer
+
+def cafe_map(request):
+    return render(request, "cafes/map.html")
