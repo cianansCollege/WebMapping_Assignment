@@ -118,3 +118,5 @@ Made cafe/urls.py:
     Project one is first entry Point for when a web request comes in, deciding which app should handle it.
     Then each app has urls, which connects to specific urls within the app.
 
+Run server:
+    python manage.py runserver
