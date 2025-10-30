@@ -1,0 +1,6 @@
+Going to make a Café Finder App. Going to use python env for normal AWM labs.
+
+Starting Project again to stay focused.
+
+Name: coffee_stained_map
+

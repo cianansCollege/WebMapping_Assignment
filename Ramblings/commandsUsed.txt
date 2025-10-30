@@ -1,0 +1,7 @@
+Day One:
+    Initiate App:
+        django-admin startproject coffee_stained_map
+        cd coffee_stained_map
+        python manage.py startapp cafes
+
+        -Added app to settings/installed_apps
