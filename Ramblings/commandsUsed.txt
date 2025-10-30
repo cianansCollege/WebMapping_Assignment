@@ -15,3 +15,75 @@ Day One:
         -Added db info to settings.py
 
     -Creating a cafe model
+
+    -Importing data from cafes.csv
+        import csv
+        from cafes.models import Cafe
+        from django.contrib.gis.geos import Point
+
+        with open('cafes.csv', newline='', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                name = row['name']
+                address = row['address']
+                lon = float(row['longitude'])
+                lat = float(row['latitude'])
+                rating = float(row['rating'])
+                location = Point(lon, lat)
+                
+                Cafe.objects.create(
+                    name=name,
+                    address=address,
+                    location=location,
+                    rating=rating
+                )
+
+import csv
+from cafes.models import Cafe
+from django.contrib.gis.geos import Point
+
+with open('data/cafes.csv', newline='', encoding='utf-8') as csvfile:
+    reader = csv.reader(csvfile)
+    next(reader)  # skip the header row
+    for row in reader:
+        name, address, lon, lat, rating = row
+        Cafe.objects.create(
+            name=name,
+            address=address,
+            location=Point(float(lon), float(lat)),
+            rating=float(rating)
+        )
+
+print("Sample cafes loaded!")
+
+model hadnt properly migrated:  
+    python manage.py makemigrations cafes
+    python manage.py migrate
+
+    verify:
+        python manage.py shell
+        from cafes.models import Cafe
+        Cafe.objects.all() 
+
+        it worked!
+
+re-tried:
+    import csv
+    from cafes.models import Cafe
+    from django.contrib.gis.geos import Point
+
+    with open('data/cafes.csv', newline='', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile)
+        next(reader)  # skip the header row
+        for row in reader:
+            name, address, lon, lat, rating = row
+            Cafe.objects.create(
+                name=name,
+                address=address,
+                location=Point(float(lon), float(lat)),
+                rating=float(rating)
+            )
+
+
+    SAMPLE CAFE LOADED!
+
