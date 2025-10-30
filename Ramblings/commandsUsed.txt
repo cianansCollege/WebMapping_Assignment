@@ -104,3 +104,14 @@ re-tried:
             print(cafe.name, cafe.distance.m)  # distance in meters
 
 
+Configuring Rest Framework: 
+    Adding to settings.py -> output will be geojson not json
+
+Created serializer in cafes:
+    makes Django REST Framework auto-output geojson geometry features for each cafe.
+
+Created a view:
+    readonly access for api endpoint. lets you read all cafes
+
+Made cafe/urls.py
+
