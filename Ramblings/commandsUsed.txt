@@ -108,10 +108,13 @@ Configuring Rest Framework:
     Adding to settings.py -> output will be geojson not json
 
 Created serializer in cafes:
-    makes Django REST Framework auto-output geojson geometry features for each cafe.
+    converts python object into geojson structure
 
 Created a view:
     readonly access for api endpoint. lets you read all cafes
 
-Made cafe/urls.py
+Made cafe/urls.py:
+    Django project has 2 levels of url routing - project/urls and app/urls
+    Project one is first entry Point for when a web request comes in, deciding which app should handle it.
+    Then each app has urls, which connects to specific urls within the app.
 
