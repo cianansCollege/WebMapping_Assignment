@@ -5,3 +5,13 @@ Day One:
         python manage.py startapp cafes
 
         -Added app to settings/installed_apps
+
+    Setting Up Postgres:
+        psql -U cianan
+        CREATE DATABASE coffee_stained_map;
+        \c coffee_stained_map
+        CREATE EXTENSION postgis;
+
+        -Added db info to settings.py
+
+    -Creating a cafe model
