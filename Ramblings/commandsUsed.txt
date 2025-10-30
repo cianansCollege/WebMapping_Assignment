@@ -120,3 +120,7 @@ Made cafe/urls.py:
 
 Run server:
     python manage.py runserver
+
+    had issues with render. removed line from settings.py and it worked :)
+
+    SUCCESS
