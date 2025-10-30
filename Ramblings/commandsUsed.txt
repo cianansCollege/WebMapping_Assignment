@@ -123,4 +123,11 @@ Run server:
 
     had issues with render. removed line from settings.py and it worked :)
 
-    SUCCESS
+    SUCCESS!
+
+Now im going to try the cafes on a map using leaflet:
+    making templates folder. creating maps.html
+    creating static folder
+
+
+
