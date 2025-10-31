@@ -5,9 +5,8 @@ from .views import cafe_map
 from rest_framework import routers
 
 router = DefaultRouter()
-router.register(r'cafes', CafeViewSet)
+router.register(r'cafes', CafeViewSet, basename='cafe')
 
 urlpatterns = [
-    path('api/', include(router.urls)),
-    path('map/', cafe_map, name='cafe_map'),
+    path('', include(router.urls)),
 ]

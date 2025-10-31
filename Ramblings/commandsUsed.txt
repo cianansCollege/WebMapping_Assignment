@@ -129,5 +129,8 @@ Now im going to try the cafes on a map using leaflet:
     making templates folder. creating maps.html
     creating static folder
 
+Having issues with markers. geojson parsing wrong. cant understand why tbh.
+had issue with urls.
+
 
 
