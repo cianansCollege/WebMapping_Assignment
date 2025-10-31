@@ -134,3 +134,31 @@ had issue with urls.
 
 
 
+Okay I had to change my structure to have all the js/css/template into one file for now as I was facing massive bugs. I may try to sepearate them again later.
+
+I am going to try working on queries now.
+
+    python manage.py shell  
+
+    test get all cafes within 500m:
+        from cafes.models import Cafe
+        from django.contrib.gis.geos import Point
+        from django.contrib.gis.db.models.functions import Distance
+
+        # Reference point (example: Brew Hub)
+        brew_hub = Cafe.objects.get(name="Brew Hub")
+        buffer_distance = 500  # in meters
+
+        # Get all cafés within 500m
+        nearby_cafes = Cafe.objects.filter(
+            location__distance_lte=(brew_hub.location, buffer_distance)
+        )
+
+        for cafe in nearby_cafes:
+            print(cafe.name, cafe.location)
+
+    making api for it:
+        adding cafes near function to views
+
+        had issues with views.py -> nearby = Cafe.objects.filter(location__distance_lte=(ref_point, D(m=distance)))
+        for ages as I missed the double underscore!!!
