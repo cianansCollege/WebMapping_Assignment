@@ -51,9 +51,10 @@ def cafes_closest(request):
     return Response(serializer.data)
 
 @api_view(['GET'])
-def cafes_within_quarter(request, quarter_id):
-    quarter = Quarter.objects.get(id=quarter_id)
+def cafes_within_quarter(request, rank):
+    quarter = Quarter.objects.get(rank=rank)
     cafes = Cafe.objects.filter(location__within=quarter.boundary)
-    serializer = CafeSerializer(cafes, many = True)
+    serializer = CafeSerializer(cafes, many=True)
     return Response(serializer.data)
+
 

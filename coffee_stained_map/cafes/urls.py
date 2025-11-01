@@ -10,5 +10,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('nearby/', cafes_near, name='cafes_near'),
     path('closest_cafes/', cafes_closest, name='cafes_closest'),
-    path('within_quarter/<int:quarter_id>/', cafes_within_quarter, name='cafes_within_quarter'),
+    path('within_quarter/<int:rank>/', cafes_within_quarter, name='cafes_within_quarter'),
 ]
