@@ -172,10 +172,10 @@ I am going to try working on queries now.
 
     going to make polygon models to use for "within" queries:
         going to make it a quarter and divide dublin by 4 quarters:
-            quad 1(north-west): [53.376186,-6.308256],[53.38000, -6.265788],[53.34676, -6.318008],[53.3467572, -6.3180080]
-            quad 2(north-east): [53.38000, -6.265788],[53.37549, -6.218826],[53.3467572, -6.3180080],[53.34537, -6.189664]
-            quad 3(south-west): [53.34676, -6.318008],[53.3467572, -6.3180080],[53.32509, -6.306760],[53.32217, -6.265597]
-            quad 4(south-east): [53.3467572, -6.3180080],[53.34537, -6.189664],[53.32217, -6.265597],[53.31330, -6.201768]
+            quad 1(north-west): [53.376186,-6.308256],[53.38000, -6.265788],[53.34676, -6.318008],[53.34722, -6.259053]
+            quad 2(north-east): [53.38000, -6.265788],[53.37549, -6.218826],[53.34722, -6.259053],[53.34537, -6.189664]
+            quad 3(south-west): [53.34676, -6.318008],[53.34722, -6.259053],[53.32509, -6.306760],[53.32217, -6.265597]
+            quad 4(south-east): [53.34722, -6.259053],[53.34537, -6.189664],[53.32217, -6.265597],[53.31330, -6.201768]
 
         python manage.py makemigrations
         python manage.py migrate
@@ -195,5 +195,77 @@ I am going to try working on queries now.
             tried to add quarter, "add template doesnt exist"
 
             had to downgrade python. downgrading django to 4.2.14
+
+    Got it made.
+
+    Going to add coords directly.:
+quad 1(north-west): [53.376186,-6.308256],[53.38000, -6.265788],[53.34676, -6.318008],[53.3467572, -6.3180080]
+
+        coords = [
+            (-6.308256, 53.376186),
+            (-6.265788, 53.38000),
+            (-6.318008, 53.34676),
+            (-6.3180080, 53.3467572),
+            (-6.308256, 53.376186), 
+        ]
+
+        poly = Polygon(coords)
+
+        q = Quarter.objects.create(
+            name="North-West",
+            rank=1,
+            boundary=poly
+        )
+
+
+
+chat made this :
+
+from cafes.models import Quarter
+from django.contrib.gis.geos import Polygon
+
+# Quad 1 - North-West
+quad1_coords = [
+    (-6.308256, 53.376186),
+    (-6.265788, 53.380000),
+    (-6.259053, 53.34722),
+    (-6.318008, 53.346760),
+    (-6.308256, 53.376186)  # close polygon
+]
+quad1 = Quarter(name='North-West', rank=1, boundary=Polygon(quad1_coords))
+quad1.save()
+
+# Quad 2 - North-East
+quad2_coords = [
+    (-6.265788, 53.380000),
+    (-6.218826, 53.37549),
+    (-6.189664, 53.34537),
+    (-6.259053, 53.34722),
+    (-6.265788, 53.380000)
+]
+quad2 = Quarter(name='North-East', rank=2, boundary=Polygon(quad2_coords))
+quad2.save()
+
+# Quad 3 - South-West
+quad3_coords = [
+    (-6.318008, 53.346760),
+    (-6.259053, 53.34722),
+    (-6.265597, 53.32217),
+    (-6.306760, 53.32509),
+    (-6.318008, 53.346760)
+]
+quad3 = Quarter(name='South-West', rank=3, boundary=Polygon(quad3_coords))
+quad3.save()
+
+# Quad 4 - South-East
+quad4_coords = [
+    (-6.259053, 53.34722),
+    (-6.189664, 53.34537),
+    (-6.201768, 53.31330),
+    (-6.265597, 53.32217),
+    (-6.259053, 53.34722)
+]
+quad4 = Quarter(name='South-East', rank=4, boundary=Polygon(quad4_coords))
+quad4.save()
 
 
