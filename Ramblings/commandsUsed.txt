@@ -180,5 +180,10 @@ I am going to try working on queries now.
         python manage.py makemigrations
         python manage.py migrate
 
-        register in admin.py:
-            
+        register in admin.py
+
+        create polygons:
+            python manage.py runserver
+                AttributeError: module 'django.contrib.admin' has no attribute 'OSMGeoAdmin' -> was missing: from django.contrib.gis import admin
+
+
