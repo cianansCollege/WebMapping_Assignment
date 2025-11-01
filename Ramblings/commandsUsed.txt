@@ -162,3 +162,10 @@ I am going to try working on queries now.
 
         had issues with views.py -> nearby = Cafe.objects.filter(location__distance_lte=(ref_point, D(m=distance)))
         for ages as I missed the double underscore!!!
+
+        http://127.0.0.1:8000/api/nearby/?lat=53.334&lng=-6.264&distance=500
+
+        returns:
+        {"type":"FeatureCollection","features":[{"id":1,"type":"Feature","geometry":"SRID=4326;POINT (-6.264209 53.334211)","properties":{"name":"Brew Hub","address":"95 Some Street, Dublin","rating":4.8}},{"id":3,"type":"Feature","geometry":"SRID=4326;POINT (-6.26192 53.33741)","properties":{"name":"Bean Spot","address":"87 Some Street, Dublin","rating":3.2}},{"id":9,"type":"Feature","geometry":"SRID=4326;POINT (-6.257994 53.332188)","properties":{"name":"Bean Lounge","address":"7 Some Street, Dublin","rating":3.2}},{"id":24,"type":"Feature","geometry":"SRID=4326;POINT (-6.257863 53.333415)","properties":{"name":"Espresso Lounge","address":"24 Some Street, Dublin","rating":4.0}}]}
+
+        
