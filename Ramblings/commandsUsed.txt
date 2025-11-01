@@ -186,4 +186,12 @@ I am going to try working on queries now.
             python manage.py runserver
                 AttributeError: module 'django.contrib.admin' has no attribute 'OSMGeoAdmin' -> was missing: from django.contrib.gis import admin
 
+            http://127.0.0.1:8000/admin/
+            SuperUser:
+            cianan
+            ciananfinn@gmail.com
+            Normal
+
+            tried to add quarter, "add template doesnt exist"
+
 
