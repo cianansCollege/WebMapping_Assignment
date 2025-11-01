@@ -194,4 +194,6 @@ I am going to try working on queries now.
 
             tried to add quarter, "add template doesnt exist"
 
+            had to downgrade python. downgrading django to 4.2.14
+
 
