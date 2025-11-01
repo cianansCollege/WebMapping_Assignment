@@ -10,7 +10,7 @@ from django.contrib.gis.measure import D
 from django.contrib.gis.db.models.functions import Distance
 
 #Local app imports
-from .models import Cafe
+from .models import Cafe, Quarter
 from .serializers import CafeSerializer
 
 
@@ -48,5 +48,12 @@ def cafes_closest(request):
     closest_cafes = Cafe.objects.annotate(distance=Distance('location', ref_point)).order_by('distance')[:5]
 
     serializer = CafeSerializer(closest_cafes, many = True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def cafes_within_quarter(request, quarter_id):
+    quarter = Quarter.objects.get(id=quarter_id)
+    cafes = Cafe.objects.filter(location__within=quarter.boundary)
+    serializer = CafeSerializer(cafes, many = True)
     return Response(serializer.data)
 
