@@ -168,4 +168,17 @@ I am going to try working on queries now.
         returns:
         {"type":"FeatureCollection","features":[{"id":1,"type":"Feature","geometry":"SRID=4326;POINT (-6.264209 53.334211)","properties":{"name":"Brew Hub","address":"95 Some Street, Dublin","rating":4.8}},{"id":3,"type":"Feature","geometry":"SRID=4326;POINT (-6.26192 53.33741)","properties":{"name":"Bean Spot","address":"87 Some Street, Dublin","rating":3.2}},{"id":9,"type":"Feature","geometry":"SRID=4326;POINT (-6.257994 53.332188)","properties":{"name":"Bean Lounge","address":"7 Some Street, Dublin","rating":3.2}},{"id":24,"type":"Feature","geometry":"SRID=4326;POINT (-6.257863 53.333415)","properties":{"name":"Espresso Lounge","address":"24 Some Street, Dublin","rating":4.0}}]}
 
-        
+        rewrote and made closests_cafes
+
+    going to make polygon models to use for "within" queries:
+        going to make it a quarter and divide dublin by 4 quarters:
+            quad 1(north-west): [53.376186,-6.308256],[53.38000, -6.265788],[53.34676, -6.318008],[53.3467572, -6.3180080]
+            quad 2(north-east): [53.38000, -6.265788],[53.37549, -6.218826],[53.3467572, -6.3180080],[53.34537, -6.189664]
+            quad 3(south-west): [53.34676, -6.318008],[53.3467572, -6.3180080],[53.32509, -6.306760],[53.32217, -6.265597]
+            quad 4(south-east): [53.3467572, -6.3180080],[53.34537, -6.189664],[53.32217, -6.265597],[53.31330, -6.201768]
+
+        python manage.py makemigrations
+        python manage.py migrate
+
+        register in admin.py:
+            

@@ -7,5 +7,14 @@ class Cafe(models.Model):
     location = models.PointField()
     rating = models.FloatField(default=0.0)
 
-    def _str_(self):
+    def __str__(self):
+        return self.name
+    
+class Quarter(models.Model):
+    name = models.CharField(max_length=15)
+    #eg. (name: north-east, rank 1), (name: south-west, rank: 4)
+    rank = models.IntegerField()
+    boundary = models.PolygonField()
+
+    def __str__(self):
         return self.name
