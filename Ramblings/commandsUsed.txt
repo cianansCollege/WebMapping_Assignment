@@ -269,3 +269,6 @@ quad4 = Quarter(name='South-East', rank=4, boundary=Polygon(quad4_coords))
 quad4.save()
 
 
+can now filter by quarter.
+
+adding visualisation of quarters to make it easier.

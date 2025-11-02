@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 from django.contrib.gis.db.models.functions import Distance
+from django.core.serializers import serialize
 
 #Local app imports
 from .models import Cafe, Quarter
@@ -31,7 +32,6 @@ def cafes_near(request):
     distance = float(request.GET.get('distance', 500))
 
     ref_point = Point(lng, lat, srid=4326)
-    #4326 - standard WGS84 GPS Coordinates
     nearby = Cafe.objects.filter(location__distance_lte=(ref_point, D(m=distance)))
 
     serializer = CafeSerializer(nearby, many = True)
@@ -57,4 +57,8 @@ def cafes_within_quarter(request, rank):
     serializer = CafeSerializer(cafes, many=True)
     return Response(serializer.data)
 
+@api_view(['GET'])
+def quarters_geojson(request):
+    data =serialize('geojson', Quarter.objects.all(), geometry_field='boundary', fields=('name',))
+    return Response(data)
 
