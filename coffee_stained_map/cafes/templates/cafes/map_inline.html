@@ -19,6 +19,16 @@
 
 <div class="container-fluid p-2">
     <h1>Coffee Stained Map</h1>
+
+    <h3>Filter Cafes by Quarter:</h3>
+    <select id="quarter-select">
+        <option value="">--Select Quarter--</option>
+        <option value="1">North-West</option>
+        <option value="2">North-East</option>
+        <option value="3">South-West</option>
+        <option value="4">South-East</option>
+    </select>
+
     <div id="map"></div>
 </div>
 
@@ -27,35 +37,72 @@
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// 1. Initialize map centered on Dublin
+// Initialize map centered on Dublin
 const map = L.map('map').setView([53.3498, -6.2603], 13);
 
-// 2. Add OpenStreetMap tiles
+//  Add map tiles
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// 3. Fetch cafes from API
-fetch("/api/cafes/")
-.then(response => response.json())
-.then(data => {
-    console.log("Fetched cafes:", data);
+// Layer group for markers
+let markersLayer = L.layerGroup().addTo(map);
+
+//  parse the coords from srid lng,lat into lat,long
+function parsePoint(geom) {
+    try {
+        const coordsText = geom.replace('SRID=4326;POINT (', '').replace(')', '');
+        const [lng, lat] = coordsText.split(' ').map(Number);
+        return [lat, lng];
+    } catch {
+        return null;
+    }
+}
+
+// render the cafes on the map
+function addCafes(data) {
+    markersLayer.clearLayers();  // Remove existing markers
 
     if (data.type === "FeatureCollection" && data.features) {
         data.features.forEach(f => {
-            // Convert "SRID=4326;POINT (lng lat)" to [lat, lng]
-            const coordsText = f.geometry.replace('SRID=4326;POINT (', '').replace(')', '');
-            const [lng, lat] = coordsText.split(' ').map(Number);
-
-            L.marker([lat, lng]).addTo(map)
-                .bindPopup(`<b>${f.properties.name}</b><br>${f.properties.address}<br>⭐ Rating: ${f.properties.rating}`);
+            const coords = parsePoint(f.geometry);
+            if (coords) {
+                L.marker(coords).addTo(markersLayer)
+                    .bindPopup(`
+                        <b>${f.properties.name}</b><br>
+                        ${f.properties.address || 'No address'}<br>
+                        ⭐ Rating: ${f.properties.rating || 'N/A'}
+                    `);
+            }
         });
     } else {
-        console.error("Unexpected data format:", data);
+        console.warn("Unexpected data format:", data);
     }
-})
-.catch(err => console.error("Error loading cafes:", err));
+}
+
+fetch("/api/cafes/")
+    .then(res => res.json())
+    .then(data => addCafes(data))
+    .catch(err => console.error("Error loading cafes:", err));
+
+document.getElementById('quarter-select').addEventListener('change', function() {
+    const quarterId = this.value;
+    if (!quarterId) {
+        // If none selected, reload all
+        fetch("/api/cafes/")
+            .then(res => res.json())
+            .then(data => addCafes(data));
+        return;
+    }
+
+    fetch(`/api/within_quarter/${quarterId}/`)
+        .then(res => res.json())
+        .then(data => addCafes(data))
+        .catch(err => console.error("Error loading cafes for quarter:", err));
+});
+
+
 </script>
 </body>
 </html>
