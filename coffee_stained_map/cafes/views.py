@@ -41,14 +41,18 @@ def cafes_near(request):
 def cafes_closest(request):
     lat = float(request.GET.get('lat', 53.334))
     lng = float(request.GET.get('lng', -6.264))
-    distance = float(request.GET.get('distance', 500))
 
     ref_point = Point(lng, lat, srid=4326)
+    closest_cafes = Cafe.objects.annotate(distance=Distance('location', ref_point))\
+.order_by('distance')[:5]
 
-    closest_cafes = Cafe.objects.annotate(distance=Distance('location', ref_point)).order_by('distance')[:5]
+    serializer = CafeSerializer(closest_cafes, many=True)
+    return Response({
+        "type": "FeatureCollection",
+        "features": list(serializer.data) 
+    })
 
-    serializer = CafeSerializer(closest_cafes, many = True)
-    return Response(serializer.data)
+
 
 @api_view(['GET'])
 def cafes_within_quarter(request, rank):
