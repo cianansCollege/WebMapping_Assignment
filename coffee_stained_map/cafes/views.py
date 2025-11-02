@@ -9,7 +9,7 @@ from .models import Cafe, Quarter
 from .serializers import CafeSerializer
 from django.shortcuts import render
 from json import loads
-from django.http import JsonResponse
+
 
 # --- ViewSet for /api/cafes/ ---
 class CafeViewSet(viewsets.ReadOnlyModelViewSet):
@@ -20,7 +20,6 @@ class CafeViewSet(viewsets.ReadOnlyModelViewSet):
 # --- Optional static page (if you use /map/) ---
 def cafe_map(request):
     return render(request, "map_inline.html")
-
 
 
 # --- Cafés near a reference point (buffer distance in meters) ---
@@ -36,10 +35,7 @@ def cafes_near(request):
     ref_point = Point(lng, lat, srid=4326)
     nearby = Cafe.objects.filter(location__distance_lte=(ref_point, distance))
     serializer = CafeSerializer(nearby, many=True)
-    return JsonResponse({
-        "type": "FeatureCollection",
-        "features": serializer.data
-    })
+    return Response(serializer.data)
 
 
 # --- Closest 5 cafés (no Haversine needed) ---
@@ -54,10 +50,7 @@ def cafes_closest(request):
     user_point = Point(lng, lat, srid=4326)
     qs = Cafe.objects.annotate(distance=Distance('location', user_point)).order_by('distance')[:5]
     serializer = CafeSerializer(qs, many=True)
-    return JsonResponse({
-        "type": "FeatureCollection",
-        "features": serializer.data
-    })
+    return Response(serializer.data)
 
 
 # --- Cafés within a quarter polygon ---
@@ -70,10 +63,7 @@ def cafes_within_quarter(request, rank):
 
     qs = Cafe.objects.filter(location__within=quarter.boundary)
     serializer = CafeSerializer(qs, many=True)
-    return JsonResponse({
-        "type": "FeatureCollection",
-        "features": serializer.data
-    })
+    return Response(serializer.data)
 
 
 # --- Quarter polygons for map outlines ---
@@ -85,5 +75,4 @@ def quarters_geojson(request):
         geometry_field='boundary',
         fields=('name', 'rank'),
     )
-    # convert the JSON string from serialize() into a Python dict
     return JsonResponse(loads(data))

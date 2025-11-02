@@ -135,6 +135,8 @@
     // --- Generic add cafés to map ---
     function addCafes(data) {
       markersLayer.clearLayers();
+      console.log("Rendering cafés:", data.features?.length || 0);
+
 
       if (!data || data.type !== "FeatureCollection" || !Array.isArray(data.features)) {
         console.warn("Unexpected data format:", data);
@@ -166,22 +168,35 @@
       });
     }
 
-    // --- Load All Cafés Initially ---
-    fetch("/api/cafes/")
-      .then((res) => res.json())
-      .then((data) => addCafes(data))
-      .catch((err) => console.error("Error loading cafes:", err));
-
     // --- Filter by Quarter ---
-    document.getElementById("quarter-select").addEventListener("change", function () {
+    document.getElementById("quarter-select").addEventListener("change", async function () {
     const quarterId = this.value;
     const url = quarterId ? `/api/within_quarter/${quarterId}/` : "/api/cafes/";
 
-    fetch(url)
-        .then(res => res.json())
-        .then(data => addCafes(data))
-        .catch(err => console.error("Error loading cafes for quarter:", err));
+    try {
+        const res = await fetch(url);
+        let data = await res.json();
+
+        // Defensive parse if it's a string
+        if (typeof data === "string") {
+        try { data = JSON.parse(data); } catch (e) {
+            console.error("Bad JSON from quarter endpoint:", e);
+            return;
+        }
+        }
+
+        console.log("Quarter response:", data);
+
+        addCafes(data);
+
+        if (!data.features?.length) {
+        alert("No cafés found in this quarter.");
+        }
+    } catch (err) {
+        console.error("Error loading cafes for quarter:", err);
+    }
     });
+
 
     // --- Find Closest Cafés ---
     document.getElementById("closest_cafes_button").addEventListener("click", () => {
