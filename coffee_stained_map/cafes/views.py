@@ -34,7 +34,7 @@ def cafes_near(request):
     ref_point = Point(lng, lat, srid=4326)
     nearby = Cafe.objects.filter(location__distance_lte=(ref_point, distance))
     serializer = CafeSerializer(nearby, many=True)
-    return Response({
+    return JsonResponse({
         "type": "FeatureCollection",
         "features": serializer.data
     })
@@ -52,7 +52,7 @@ def cafes_closest(request):
     user_point = Point(lng, lat, srid=4326)
     qs = Cafe.objects.annotate(distance=Distance('location', user_point)).order_by('distance')[:5]
     serializer = CafeSerializer(qs, many=True)
-    return Response({
+    return JsonResponse({
         "type": "FeatureCollection",
         "features": serializer.data
     })
@@ -68,7 +68,7 @@ def cafes_within_quarter(request, rank):
 
     qs = Cafe.objects.filter(location__within=quarter.boundary)
     serializer = CafeSerializer(qs, many=True)
-    return Response({
+    return JsonResponse({
         "type": "FeatureCollection",
         "features": serializer.data
     })
