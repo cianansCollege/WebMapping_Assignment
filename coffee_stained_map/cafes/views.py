@@ -8,6 +8,8 @@ from django.core.serializers import serialize
 from .models import Cafe, Quarter
 from .serializers import CafeSerializer
 from django.shortcuts import render
+from json import loads
+from django.http import JsonResponse
 
 # --- ViewSet for /api/cafes/ ---
 class CafeViewSet(viewsets.ReadOnlyModelViewSet):
@@ -77,8 +79,11 @@ def cafes_within_quarter(request, rank):
 # --- Quarter polygons for map outlines ---
 @api_view(['GET'])
 def quarters_geojson(request):
-    data = serialize('geojson', Quarter.objects.all(),
-                     geometry_field='boundary',
-                     fields=('name', 'rank'))
-    # NOTE: This returns a JSON *string*, matching your frontend JSON.parse()
-    return Response(data)
+    data = serialize(
+        'geojson',
+        Quarter.objects.all(),
+        geometry_field='boundary',
+        fields=('name', 'rank'),
+    )
+    # convert the JSON string from serialize() into a Python dict
+    return JsonResponse(loads(data))
