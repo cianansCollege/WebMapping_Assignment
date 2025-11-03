@@ -19,7 +19,7 @@ class CafeViewSet(viewsets.ReadOnlyModelViewSet):
 def cafe_map(request):
     return render(request, "map_inline.html")
 
-
+"""returns cafes within hardcoded distance of a point, for original testing"""
 @api_view(['GET'])
 def cafes_near(request):
     try:
@@ -34,6 +34,8 @@ def cafes_near(request):
     serializer = CafeSerializer(nearby, many=True)
     return Response(serializer.data)
 
+
+"""returns 5 cafes nearest to coordinates given"""
 @api_view(['GET'])
 def cafes_closest(request):
     try:
@@ -47,6 +49,7 @@ def cafes_closest(request):
     serializer = CafeSerializer(qs, many=True)
     return Response(serializer.data)
 
+"""returns cafes within the quarter specifeied using rank"""
 @api_view(['GET'])
 def cafes_within_quarter(request, rank):
     try:
@@ -58,7 +61,7 @@ def cafes_within_quarter(request, rank):
     serializer = CafeSerializer(qs, many=True)
     return Response(serializer.data)
 
-
+"""returns quarter boundary"""
 @api_view(['GET'])
 def quarters_geojson(request):
     data = serialize(
@@ -69,7 +72,7 @@ def quarters_geojson(request):
     )
     return JsonResponse(loads(data))
 
-
+"""returns cafes within radius of a point given by user"""
 @api_view(['GET'])
 def cafes_within_radius(request):
     try:
