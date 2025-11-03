@@ -1,0 +1,236 @@
+cianan@Cianans-MacBook-Pro coffee_stained_map % docker compose build
+
+WARN[0000] /Users/cianan/Documents/GitHub/WebMapping_Assignment/coffee_stained_map/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+[+] Building 109.4s (14/14) FINISHED                                                                                                                                   
+ => [internal] load local bake definitions                                                                                                                        0.0s
+ => => reading from stdin 605B                                                                                                                                    0.0s
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 970B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/python:3.11-slim                                                                                               1.8s
+ => [auth] library/python:pull token for registry-1.docker.io                                                                                                     0.0s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => [1/6] FROM docker.io/library/python:3.11-slim@sha256:8eb5fc663972b871c528fef04be4eaa9ab8ab4539a5316c4b8c133771214a617                                         3.7s
+ => => resolve docker.io/library/python:3.11-slim@sha256:8eb5fc663972b871c528fef04be4eaa9ab8ab4539a5316c4b8c133771214a617                                         0.0s
+ => => sha256:9c627570eae02524102266270c0dd1e8567628bbe81c40959c75efe0ec9554cc 249B / 249B                                                                        0.3s
+ => => sha256:f25c556e0c1c976e06a4b63b9a829149606a17b494cb2cfacd64f8e0802d5dcb 14.31MB / 14.31MB                                                                  1.4s
+ => => sha256:0d300626d1f697c3cea83a80e2c56eeef439b1528e94ac30f8946cc4cd168b8d 1.27MB / 1.27MB                                                                    1.0s
+ => => sha256:a16e551192670581ec8359c70ab9eebf8f2af5468ffc79b3d4f9ce21b0366f47 30.14MB / 30.14MB                                                                  2.8s
+ => => extracting sha256:a16e551192670581ec8359c70ab9eebf8f2af5468ffc79b3d4f9ce21b0366f47                                                                         0.5s
+ => => extracting sha256:0d300626d1f697c3cea83a80e2c56eeef439b1528e94ac30f8946cc4cd168b8d                                                                         0.0s
+ => => extracting sha256:f25c556e0c1c976e06a4b63b9a829149606a17b494cb2cfacd64f8e0802d5dcb                                                                         0.2s
+ => => extracting sha256:9c627570eae02524102266270c0dd1e8567628bbe81c40959c75efe0ec9554cc                                                                         0.0s
+ => [internal] load build context                                                                                                                                 1.1s
+ => => transferring context: 65.58MB                                                                                                                              1.1s
+ => [2/6] RUN apt-get update && apt-get install -y     binutils     libproj-dev     gdal-bin     python3-gdal     gcc     libgeos-dev     libgdal-dev     postg  51.5s
+ => [3/6] WORKDIR /app                                                                                                                                            0.2s 
+ => [4/6] COPY requirements.txt /app/                                                                                                                             0.0s 
+ => [5/6] RUN pip install --no-cache-dir -r requirements.txt                                                                                                     11.7s 
+ => [6/6] COPY . /app/                                                                                                                                            0.7s 
+ => exporting to image                                                                                                                                           39.3s
+ => => exporting layers                                                                                                                                          30.9s
+ => => exporting manifest sha256:7b958869b36be998489d36459a9589cc3bf0791aa60f284a5841883ae0d1a164                                                                 0.0s
+ => => exporting config sha256:aebc921bb5ed1d575a8045d149d2700f58ec3c3dcc541b6432e49a45daac3aa5                                                                   0.0s
+ => => exporting attestation manifest sha256:f4c9544df4c79566ba7803d5df2b8682862db8f72bdac15f6686bcde2e4629bf                                                     0.0s
+ => => exporting manifest list sha256:c16dba5553ed1def3e5e63d6365e6aee0098e2260ffdb10cca833c44a0575432                                                            0.0s
+ => => naming to docker.io/library/coffee_stained_map-web:latest                                                                                                  0.0s
+ => => unpacking to docker.io/library/coffee_stained_map-web:latest                                                                                               8.4s
+ => resolving provenance for metadata file                                                                                                                        0.0s
+[+] Building 1/1
+ ✔ coffee_stained_map-web  Built                                                                                                                                  0.0s 
+cianan@Cianans-MacBook-Pro coffee_stained_map % docker compose up
+WARN[0000] /Users/cianan/Documents/GitHub/WebMapping_Assignment/coffee_stained_map/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+[+] Running 19/19
+ ✔ db Pulled                                                                                                                                                     15.2s 
+   ✔ 1dd503dc3f1b Pull complete                                                                                                                                   0.5s 
+   ✔ 9cf9ef498eaf Pull complete                                                                                                                                  12.6s 
+   ✔ d58bedeb8df0 Pull complete                                                                                                                                   0.9s 
+   ✔ 0ff9d8a26e29 Pull complete                                                                                                                                  13.4s 
+   ✔ d7b81b9ff2c0 Pull complete                                                                                                                                   0.7s 
+   ✔ fa0650a893c2 Pull complete                                                                                                                                   7.0s 
+   ✔ 5537661e92d5 Pull complete                                                                                                                                   1.0s 
+   ✔ 4f4fb700ef54 Pull complete                                                                                                                                   0.7s 
+   ✔ d115bdfe4007 Pull complete                                                                                                                                   7.2s 
+   ✔ 46e26ae920e3 Pull complete                                                                                                                                   7.1s 
+   ✔ 9fb1288f38e6 Pull complete                                                                                                                                   1.0s 
+   ✔ e47205d73fe7 Pull complete                                                                                                                                   1.0s 
+   ✔ 32f2cf7c80ee Pull complete                                                                                                                                   0.9s 
+   ✔ 5c7f90d2ce25 Pull complete                                                                                                                                   1.0s 
+   ✔ 0b26c8c1a70e Pull complete                                                                                                                                   1.8s 
+   ✔ 6e02f1c4ee3e Pull complete                                                                                                                                   1.2s 
+   ✔ 6af3c5e926e2 Pull complete                                                                                                                                   1.3s 
+   ✔ 33da18746c25 Pull complete                                                                                                                                   5.3s 
+[+] Running 6/6
+ ✔ Network coffee_stained_map_default                                                                                                                Created      0.0s 
+ ✔ Volume coffee_stained_map_postgres_data                                                                                                           Created      0.0s 
+ ✔ Container coffee_db                                                                                                                               Created      0.6s 
+ ! db The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested              0.0s 
+ ✔ Container coffee_web                                                                                                                              Created      0.1s 
+ ✔ Container coffee_pgadmin                                                                                                                          Created      0.1s 
+Attaching to coffee_db, coffee_pgadmin, coffee_web
+coffee_pgadmin  | email config is {'CHECK_EMAIL_DELIVERABILITY': False, 'ALLOW_SPECIAL_EMAIL_DOMAINS': [], 'GLOBALLY_DELIVERABLE': True}
+coffee_db       | The files belonging to this database system will be owned by user "postgres".
+coffee_db       | This user must also own the server process.
+coffee_db       | 
+coffee_db       | The database cluster will be initialized with locale "en_US.utf8".
+coffee_db       | The default database encoding has accordingly been set to "UTF8".
+coffee_db       | The default text search configuration will be set to "english".
+coffee_db       | 
+coffee_db       | Data page checksums are disabled.
+coffee_db       | 
+coffee_db       | fixing permissions on existing directory /var/lib/postgresql/data ... ok
+coffee_db       | creating subdirectories ... ok
+coffee_db       | selecting dynamic shared memory implementation ... posix
+coffee_db       | selecting default max_connections ... 100
+coffee_db       | selecting default shared_buffers ... 128MB
+coffee_db       | selecting default time zone ... Etc/UTC
+coffee_db       | creating configuration files ... ok
+coffee_web      | Traceback (most recent call last):
+coffee_web      |   File "/app/manage.py", line 22, in <module>
+coffee_web      |     main()
+coffee_web      |   File "/app/manage.py", line 18, in main
+coffee_web      |     execute_from_command_line(sys.argv)
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/core/management/__init__.py", line 442, in execute_from_command_line
+coffee_web      |     utility.execute()
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/core/management/__init__.py", line 416, in execute
+coffee_web      |     django.setup()
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/__init__.py", line 24, in setup
+coffee_web      |     apps.populate(settings.INSTALLED_APPS)
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/apps/registry.py", line 116, in populate
+coffee_web      |     app_config.import_models()
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/apps/config.py", line 269, in import_models
+coffee_web      |     self.models_module = import_module(models_module_name)
+coffee_web      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+coffee_web      |   File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+coffee_web      |     return _bootstrap._gcd_import(name[level:], package, level)
+coffee_web      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+coffee_web      |   File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+coffee_web      |   File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+coffee_web      |   File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+coffee_web      |   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+coffee_web      |   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+coffee_web      |   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/contrib/auth/models.py", line 3, in <module>
+coffee_web      |     from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/contrib/auth/base_user.py", line 57, in <module>
+coffee_web      |     class AbstractBaseUser(models.Model):
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/db/models/base.py", line 143, in __new__
+coffee_web      |     new_class.add_to_class("_meta", Options(meta, app_label))
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/db/models/base.py", line 371, in add_to_class
+coffee_web      |     value.contribute_to_class(cls, name)
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/db/models/options.py", line 243, in contribute_to_class
+coffee_web      |     self.db_table, connection.ops.max_name_length()
+coffee_web      |                    ^^^^^^^^^^^^^^
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/utils/connection.py", line 15, in __getattr__
+coffee_web      |     return getattr(self._connections[self._alias], item)
+coffee_web      |                    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/utils/connection.py", line 62, in __getitem__
+coffee_web      |     conn = self.create_connection(alias)
+coffee_web      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/db/utils.py", line 193, in create_connection
+coffee_web      |     backend = load_backend(db["ENGINE"])
+coffee_web      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/db/utils.py", line 113, in load_backend
+coffee_web      |     return import_module("%s.base" % backend_name)
+coffee_web      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+coffee_web      |   File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+coffee_web      |     return _bootstrap._gcd_import(name[level:], package, level)
+coffee_web      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/contrib/gis/db/backends/postgis/base.py", line 7, in <module>
+coffee_web      |     from .adapter import PostGISAdapter
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/contrib/gis/db/backends/postgis/adapter.py", line 5, in <module>
+coffee_web      |     from django.contrib.gis.geos import GEOSGeometry
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/contrib/gis/geos/__init__.py", line 5, in <module>
+coffee_web      |     from .collections import (  # NOQA
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/contrib/gis/geos/collections.py", line 6, in <module>
+coffee_web      |     from django.contrib.gis.geos.geometry import GEOSGeometry, LinearGeometryMixin
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/contrib/gis/geos/geometry.py", line 8, in <module>
+coffee_web      |     from django.contrib.gis import gdal
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/contrib/gis/gdal/__init__.py", line 28, in <module>
+coffee_web      |     from django.contrib.gis.gdal.datasource import DataSource
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/contrib/gis/gdal/datasource.py", line 40, in <module>
+coffee_web      |     from django.contrib.gis.gdal.driver import Driver
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/contrib/gis/gdal/driver.py", line 5, in <module>
+coffee_web      |     from django.contrib.gis.gdal.prototypes import ds as vcapi
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/contrib/gis/gdal/prototypes/ds.py", line 9, in <module>
+coffee_web      |     from django.contrib.gis.gdal.libgdal import lgdal
+coffee_web      |   File "/usr/local/lib/python3.11/site-packages/django/contrib/gis/gdal/libgdal.py", line 71, in <module>
+coffee_web      |     lgdal = CDLL(lib_path)
+coffee_web      |             ^^^^^^^^^^^^^^
+coffee_web      |   File "/usr/local/lib/python3.11/ctypes/__init__.py", line 376, in __init__
+coffee_web      |     self._handle = _dlopen(self._name, mode)
+coffee_web      |                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+coffee_web      | OSError: /opt/homebrew/opt/gdal/lib/libgdal.dylib: cannot open shared object file: No such file or directory
+coffee_db       | running bootstrap script ... ok
+coffee_web exited with code 1
+coffee_db       | performing post-bootstrap initialization ... ok
+coffee_db       | syncing data to disk ... ok
+coffee_db       | 
+coffee_db       | initdb: warning: enabling "trust" authentication for local connections
+coffee_db       | initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+coffee_db       | 
+coffee_db       | Success. You can now start the database server using:
+coffee_db       | 
+coffee_db       |     pg_ctl -D /var/lib/postgresql/data -l logfile start
+coffee_db       | 
+coffee_db       | waiting for server to start....2025-11-03 20:20:48.698 UTC [49] LOG:  starting PostgreSQL 15.8 (Debian 15.8-1.pgdg110+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 10.2.1-6) 10.2.1 20210110, 64-bit
+coffee_db       | 2025-11-03 20:20:48.700 UTC [49] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+coffee_db       | 2025-11-03 20:20:48.706 UTC [52] LOG:  database system was shut down at 2025-11-03 20:20:48 UTC
+coffee_db       | 2025-11-03 20:20:48.716 UTC [49] LOG:  database system is ready to accept connections
+coffee_db       |  done
+coffee_db       | server started
+coffee_db       | CREATE DATABASE
+coffee_db       | 
+coffee_db       | 
+coffee_db       | /usr/local/bin/docker-entrypoint.sh: sourcing /docker-entrypoint-initdb.d/10_postgis.sh
+coffee_db       | CREATE DATABASE
+coffee_db       | Loading PostGIS extensions into template_postgis
+coffee_pgadmin  | /venv/lib/python3.12/site-packages/passlib/pwd.py:16: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+coffee_pgadmin  |   import pkg_resources
+coffee_db       | CREATE EXTENSION
+coffee_db       | CREATE EXTENSION
+coffee_db       | You are now connected to database "template_postgis" as user "webmapping".
+coffee_db       | CREATE EXTENSION
+coffee_db       | CREATE EXTENSION
+coffee_db       | Loading PostGIS extensions into coffee_map
+coffee_db       | CREATE EXTENSION
+coffee_db       | CREATE EXTENSION
+coffee_db       | You are now connected to database "coffee_map" as user "webmapping".
+coffee_db       | CREATE EXTENSION
+coffee_db       | CREATE EXTENSION
+coffee_db       | 
+coffee_db       | 2025-11-03 20:20:51.320 UTC [49] LOG:  received fast shutdown request
+coffee_db       | waiting for server to shut down....2025-11-03 20:20:51.322 UTC [49] LOG:  aborting any active transactions
+coffee_db       | 2025-11-03 20:20:51.327 UTC [49] LOG:  background worker "logical replication launcher" (PID 55) exited with exit code 1
+coffee_db       | 2025-11-03 20:20:51.327 UTC [50] LOG:  shutting down
+coffee_db       | 2025-11-03 20:20:51.328 UTC [50] LOG:  checkpoint starting: shutdown immediate
+coffee_db       | 2025-11-03 20:20:51.426 UTC [50] LOG:  checkpoint complete: wrote 4473 buffers (27.3%); 0 WAL file(s) added, 0 removed, 2 recycled; write=0.028 s, sync=0.064 s, total=0.097 s; sync files=963, longest=0.018 s, average=0.001 s; distance=34925 kB, estimate=34925 kB
+coffee_db       | 2025-11-03 20:20:51.433 UTC [49] LOG:  database system is shut down
+coffee_db       |  done
+coffee_db       | server stopped
+coffee_db       | 
+coffee_db       | PostgreSQL init process complete; ready for start up.
+coffee_db       | 
+coffee_db       | 2025-11-03 20:20:51.581 UTC [1] LOG:  starting PostgreSQL 15.8 (Debian 15.8-1.pgdg110+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 10.2.1-6) 10.2.1 20210110, 64-bit
+coffee_db       | 2025-11-03 20:20:51.583 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+coffee_db       | 2025-11-03 20:20:51.583 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+coffee_db       | 2025-11-03 20:20:51.585 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+coffee_db       | 2025-11-03 20:20:51.591 UTC [73] LOG:  database system was shut down at 2025-11-03 20:20:51 UTC
+coffee_db       | 2025-11-03 20:20:51.602 UTC [1] LOG:  database system is ready to accept connections
+coffee_pgadmin  | NOTE: Configuring authentication for SERVER mode.
+coffee_pgadmin  | 
+coffee_pgadmin  | pgAdmin 4 - Application Initialisation
+coffee_pgadmin  | ======================================
+coffee_pgadmin  | 
+coffee_pgadmin  | postfix/postlog: starting the Postfix mail system
+coffee_pgadmin  | /venv/lib/python3.12/site-packages/passlib/pwd.py:16: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+coffee_pgadmin  |   import pkg_resources
+coffee_pgadmin  | /venv/lib/python3.12/site-packages/passlib/pwd.py:16: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+coffee_pgadmin  |   import pkg_resources
+coffee_pgadmin  | [2025-11-03 20:21:00 +0000] [1] [INFO] Starting gunicorn 23.0.0
+coffee_pgadmin  | [2025-11-03 20:21:00 +0000] [1] [INFO] Listening at: http://[::]:80 (1)
+coffee_pgadmin  | [2025-11-03 20:21:00 +0000] [1] [INFO] Using worker: gthread
+coffee_pgadmin  | [2025-11-03 20:21:00 +0000] [119] [INFO] Booting worker with pid: 119
+
+
+v View in Docker Desktop   o View Config   w Enable Watch

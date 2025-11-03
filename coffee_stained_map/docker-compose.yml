@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  # 🗺️ Database (PostGIS)
+  db:
+    image: postgis/postgis:15-3.4
+    container_name: coffee_db
+    restart: always
+    environment:
+      POSTGRES_DB: coffee_map
+      POSTGRES_USER: webmapping
+      POSTGRES_PASSWORD: BigSandwich
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # ☕ Django Application
+  web:
+    build: .
+    container_name: coffee_web
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DEBUG=1
+      - DB_NAME=coffee_map
+      - DB_USER=webmapping
+      - DB_PASSWORD=secure_webmapping_2024
+      - DB_HOST=db
+      - DB_PORT=5432
+
+  # 🧭 PgAdmin (optional UI to browse database)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: coffee_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@coffee.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

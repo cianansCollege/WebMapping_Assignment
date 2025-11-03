@@ -81,13 +81,13 @@ WSGI_APPLICATION = 'coffee_stained_map.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'coffee_stained_map',
-        'USER': 'cianan',
-        'PASSWORD': 'awm123',   # your webmapping password
-        'HOST': 'localhost',
-        'PORT': '5432',
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": os.getenv("DB_NAME", "coffee_map"),
+        "USER": os.getenv("DB_USER", "webmapping"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "BigSandwich"),
+        "HOST": os.getenv("DB_HOST", "localhost"),
+        "PORT": os.getenv("DB_PORT", "5432"),
     }
 }
 
