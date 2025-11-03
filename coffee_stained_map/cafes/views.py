@@ -9,20 +9,17 @@ from .models import Cafe, Quarter
 from .serializers import CafeSerializer
 from django.shortcuts import render
 from json import loads
+from django.contrib.gis.measure import D
 
 
-# --- ViewSet for /api/cafes/ ---
 class CafeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Cafe.objects.all()
     serializer_class = CafeSerializer
 
-
-# --- Optional static page (if you use /map/) ---
 def cafe_map(request):
     return render(request, "map_inline.html")
 
 
-# --- Cafés near a reference point (buffer distance in meters) ---
 @api_view(['GET'])
 def cafes_near(request):
     try:
@@ -37,8 +34,6 @@ def cafes_near(request):
     serializer = CafeSerializer(nearby, many=True)
     return Response(serializer.data)
 
-
-# --- Closest 5 cafés (no Haversine needed) ---
 @api_view(['GET'])
 def cafes_closest(request):
     try:
@@ -52,8 +47,6 @@ def cafes_closest(request):
     serializer = CafeSerializer(qs, many=True)
     return Response(serializer.data)
 
-
-# --- Cafés within a quarter polygon ---
 @api_view(['GET'])
 def cafes_within_quarter(request, rank):
     try:
@@ -66,7 +59,6 @@ def cafes_within_quarter(request, rank):
     return Response(serializer.data)
 
 
-# --- Quarter polygons for map outlines ---
 @api_view(['GET'])
 def quarters_geojson(request):
     data = serialize(
@@ -76,3 +68,18 @@ def quarters_geojson(request):
         fields=('name', 'rank'),
     )
     return JsonResponse(loads(data))
+
+
+@api_view(['GET'])
+def cafes_within_radius(request):
+    try:
+        lat = float(request.GET.get('lat'))
+        lng = float(request.GET.get('lng'))
+        radius = float(request.GET.get('radius', 1000))
+    except (TypeError, ValueError):
+        return Response({"error": "Provide numeric lat, lng and radius"}, status=400)
+
+    user_point = Point(lng, lat, srid=4326)
+    qs = Cafe.objects.filter(location__distance_lte=(user_point, D(m=radius)))
+    serializer = CafeSerializer(qs, many=True)
+    return Response(serializer.data)
