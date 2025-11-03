@@ -13,6 +13,11 @@ class CafeSerializer(GeoFeatureModelSerializer):
     def get_distance(self, obj):
         # return distance in meters if available (used by cafes_closest view)
         if hasattr(obj, "distance") and obj.distance is not None:
-            return round(obj.distance.m)
+            #return in km if over 1000m
+            meters = obj.distance.m
+            if meters >= 1000:
+                return f"{round(meters/1000, 1)}km"
+            else:
+                return f"{round(meters)}m"
         return None
 

@@ -125,7 +125,7 @@
       .then(res => res.json())
       .then(geojson => {
         L.geoJSON(geojson, {
-          style: { color: "#6f4e37", weight: 2, fillOpacity: 0 },
+          style: { color: "#6f4e37", weight: 1, fillOpacity: 0 },
           onEachFeature: (feature, layer) => {
             layer.bindPopup(`<b>${feature.properties.name}</b>`);
           },
@@ -221,7 +221,7 @@
                   <b>${p.name ?? "Unnamed Café"}</b><br>
                   ${p.address ?? "No address"}<br>
                   ⭐ ${p.rating ?? "N/A"}
-                  ${p.distance ? `<br>📍 ${p.distance} m away` : ""}
+                  ${p.distance ? `<br>📍 ${p.distance} away` : ""}
                 </div>`;
             });
           } else {
