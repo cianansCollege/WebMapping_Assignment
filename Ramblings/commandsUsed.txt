@@ -272,3 +272,9 @@ quad4.save()
 can now filter by quarter.
 
 adding visualisation of quarters to make it easier.
+
+PYTHON ENV:
+source ~/.pyenv/versions/3.12.12/envs/awm_env_312/bin/activate
+pyenv activate awm_env_312
+
+
