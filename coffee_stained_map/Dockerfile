@@ -7,15 +7,9 @@ ENV PYTHONUNBUFFERED 1
 
 # Install system dependencies needed by GeoDjango
 RUN apt-get update && apt-get install -y \
-    binutils \
-    libproj-dev \
-    gdal-bin \
-    python3-gdal \
-    gcc \
-    libgeos-dev \
-    libgdal-dev \
-    postgis \
+    binutils libproj-dev gdal-bin python3-gdal gcc libgeos-dev libgdal-dev postgis netcat-traditional \
     && rm -rf /var/lib/apt/lists/*
+
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -33,4 +27,5 @@ COPY . /app/
 EXPOSE 8000
 
 # Default command: run migrations, then start the dev server
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+CMD ["./wait_for_db.sh", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+
