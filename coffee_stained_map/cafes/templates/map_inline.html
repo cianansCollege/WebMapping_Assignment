@@ -30,6 +30,15 @@
       box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
     }
 
+    #toggle-quarters {
+      text-align: center;
+      margin-top: 10px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+
     select,
     input,
     button {
@@ -86,6 +95,12 @@
             </button>
           </div>
 
+          <div id="toggle-quarters">
+            <button> 
+              Hide Quarters
+            </button>
+          </div>
+
           <div id="cafe-list" class="mt-3"></div>
         </div>
       </div>
@@ -122,8 +137,8 @@
         style: {
             color: "#6f4e37",      // coffee brown
             weight: 2,
-            fillColor: "#f5deb3",
-            fillOpacity: 0.05
+            fillColor: "#none",
+            fillOpacity: 0
         },
         onEachFeature: (feature, layer) => {
             layer.bindPopup(`<b>${feature.properties.name}</b>`);
@@ -132,7 +147,7 @@
     })
     .catch(err => console.error("Error loading quarters:", err));
 
-    // --- Generic add cafés to map ---
+    // add cafes
     function addCafes(data) {
       markersLayer.clearLayers();
       console.log("Rendering cafés:", data.features?.length || 0);
@@ -159,6 +174,9 @@
         if (lat && lng) {
           L.marker([lat, lng])
             .addTo(markersLayer)
+            .on("click", () => {
+              map.setView([lat, lng], 16);
+            })
             .bindPopup(
               `<b>${f.properties?.name ?? "Unnamed Café"}</b><br>
               ${f.properties?.address ?? "No address"}<br>
@@ -266,6 +284,20 @@
           addCafes(data);
         })
         .catch(err => console.error("Error loading initial cafés:", err));
+    });
+
+    // Toggle quarters
+    let quartersVisible = true;
+    document.getElementById("toggle-quarters").addEventListener("click", () => {
+      if(quartersVisible){
+        map.removeLayer(quarterLayer);
+        document.getElementById("toggle-quarters").textContent = "Show Quarters";
+      }
+      else{
+        map.addLayer(quarterLayer);
+        document.getElementById("toggle-quarters").textContent = "Hide Quarters";
+      }
+      quartersVisible = !quartersVisible;
     });
 
   </script>
