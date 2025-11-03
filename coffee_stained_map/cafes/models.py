@@ -27,3 +27,8 @@ class Quarter(models.Model):
     def __str__(self):
         return self.name
     
+    class Meta:
+        indexes = [
+            Index(fields=["boundary"], name="quarter_boundary_gist", opclasses=["gist"])
+        ]
+    
