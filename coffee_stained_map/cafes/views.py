@@ -1,68 +1,93 @@
-#Django + REST Framework imports
-from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
-#GeoDjango imports
+from django.http import JsonResponse
 from django.contrib.gis.geos import Point
-from django.contrib.gis.measure import D
 from django.contrib.gis.db.models.functions import Distance
 from django.core.serializers import serialize
-
-#Local app imports
 from .models import Cafe, Quarter
 from .serializers import CafeSerializer
+from django.shortcuts import render
+from json import loads
+from django.contrib.gis.measure import D
 
 
 class CafeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Cafe.objects.all()
     serializer_class = CafeSerializer
 
-# def cafe_map(request):
-#     return render(request, "cafes/map.html")
-
 def cafe_map(request):
-    return render(request, "cafes/map_inline.html")
+    return render(request, "map_inline.html")
+
 
 @api_view(['GET'])
 def cafes_near(request):
-    lat = float(request.GET.get('lat', 53.334))
-    lng = float(request.GET.get('lng', -6.264))
-    distance = float(request.GET.get('distance', 500))
+    """returns cafes within hardcoded distance of a point, for original testing"""
+    try:
+        lat = float(request.GET.get('lat'))
+        lng = float(request.GET.get('lng'))
+        distance = float(request.GET.get('distance', 500))
+    except (TypeError, ValueError):
+        return Response({"error": "Please supply valid lat, lng, and optional distance (m)"}, status=400)
 
     ref_point = Point(lng, lat, srid=4326)
-    nearby = Cafe.objects.filter(location__distance_lte=(ref_point, D(m=distance)))
-
-    serializer = CafeSerializer(nearby, many = True)
+    nearby = Cafe.objects.filter(location__distance_lte=(ref_point, distance))
+    serializer = CafeSerializer(nearby, many=True)
     return Response(serializer.data)
+
+
 
 @api_view(['GET'])
 def cafes_closest(request):
-    lat = float(request.GET.get('lat', 53.334))
-    lng = float(request.GET.get('lng', -6.264))
+    """returns 5 cafes nearest to coordinates given"""
+    try:
+        lat = float(request.GET.get('lat'))
+        lng = float(request.GET.get('lng'))
+    except (TypeError, ValueError):
+        return Response({"error": "Provide numeric lat and lng"}, status=400)
 
-    ref_point = Point(lng, lat, srid=4326)
-    closest_cafes = Cafe.objects.annotate(distance=Distance('location', ref_point))\
-.order_by('distance')[:5]
-
-    serializer = CafeSerializer(closest_cafes, many=True)
-    return Response({
-        "type": "FeatureCollection",
-        "features": list(serializer.data) 
-    })
-
+    user_point = Point(lng, lat, srid=4326)
+    qs = Cafe.objects.annotate(distance=Distance('location', user_point)).order_by('distance')[:5]
+    serializer = CafeSerializer(qs, many=True)
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
 def cafes_within_quarter(request, rank):
-    quarter = Quarter.objects.get(rank=rank)
-    cafes = Cafe.objects.filter(location__within=quarter.boundary)
-    serializer = CafeSerializer(cafes, many=True)
+    """returns cafes within the quarter specifeied using rank"""
+    try:
+        quarter = Quarter.objects.get(rank=rank)
+    except Quarter.DoesNotExist:
+        return Response({"error": f"No quarter found with rank {rank}"}, status=404)
+
+    qs = Cafe.objects.filter(location__within=quarter.boundary)
+    serializer = CafeSerializer(qs, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 def quarters_geojson(request):
-    data =serialize('geojson', Quarter.objects.all(), geometry_field='boundary', fields=('name',))
-    return Response(data)
+    """returns quarter boundary"""
+    data = serialize(
+        'geojson',
+        Quarter.objects.all(),
+        geometry_field='boundary',
+        fields=('name', 'rank'),
+    )
+    return JsonResponse(loads(data))
 
+
+@api_view(['GET'])
+def cafes_within_radius(request):
+    """returns cafes within radius of a point given by user"""
+    try:
+        lat = float(request.GET.get('lat'))
+        lng = float(request.GET.get('lng'))
+        radius = float(request.GET.get('radius', 1000))
+    except (TypeError, ValueError):
+        return Response({"error": "Provide numeric lat, lng and radius"}, status=400)
+
+    user_point = Point(lng, lat, srid=4326)
+    qs = Cafe.objects.filter(location__distance_lte=(user_point, D(m=radius)))
+    serializer = CafeSerializer(qs, many=True)
+    return Response(serializer.data)

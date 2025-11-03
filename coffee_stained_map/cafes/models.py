@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.gis.db import models
+from django.db.models import Index
+from django.contrib.gis.db import models
 
 class Cafe(models.Model):
     name = models.CharField(max_length=100)
@@ -10,6 +12,12 @@ class Cafe(models.Model):
     def __str__(self):
         return self.name
     
+    class Meta:
+        indexes = [
+            Index(fields=["location"], name="cafe_location_gist", opclasses=["gist"])
+        ]
+
+    
 class Quarter(models.Model):
     name = models.CharField(max_length=15)
     #eg. (name: north-east, rank 1), (name: south-west, rank: 4)
@@ -18,3 +26,9 @@ class Quarter(models.Model):
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        indexes = [
+            Index(fields=["boundary"], name="quarter_boundary_gist", opclasses=["gist"])
+        ]
+    
