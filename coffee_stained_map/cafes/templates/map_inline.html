@@ -182,19 +182,55 @@
     document.getElementById("closest_cafes_button").addEventListener("click", () => {
       const lat = parseFloat(document.getElementById("latInput").value);
       const lng = parseFloat(document.getElementById("lngInput").value);
-      if (isNaN(lat) || isNaN(lng)) { alert("enter valid coordinates"); return; }
+      if (isNaN(lat) || isNaN(lng)) { 
+        alert("enter valid coordinates"); 
+        return; 
+      }
 
       fetch(`/api/closest_cafes/?lat=${lat}&lng=${lng}`)
         .then(res => res.json())
         .then(fc => {
-          if (typeof fc === "string") { try { fc = JSON.parse(fc); } catch { return; } }
+          if (typeof fc === "string") { 
+            try { fc = JSON.parse(fc); } catch { return; } 
+          }
+
           addCafes(fc);
-          L.marker([lat, lng], { icon: L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/64/64113.png", iconSize: [25, 25] }) })
-            .addTo(map).bindPopup("search location").openPopup();
+
+          // add marker for search location
+          L.marker([lat, lng], { 
+            icon: L.icon({ 
+              iconUrl: "https://cdn-icons-png.flaticon.com/512/64/64113.png", 
+              iconSize: [25, 25] 
+            }) 
+          })
+            .addTo(map)
+            .bindPopup("search location")
+            .openPopup();
+
           map.setView([lat, lng], 14);
+
+          // update sidebar list
+          const listDiv = document.getElementById("cafe-list");
+          listDiv.innerHTML = "<h6 class='fw-semibold mt-3'>Closest Cafés:</h6>";
+
+          if (Array.isArray(fc.features)) {
+            fc.features.forEach(f => {
+              const p = f.properties;
+              listDiv.innerHTML += `
+                <div class="border-bottom pb-2 mb-2">
+                  <b>${p.name ?? "Unnamed Café"}</b><br>
+                  ${p.address ?? "No address"}<br>
+                  ⭐ ${p.rating ?? "N/A"}
+                  ${p.distance ? `<br>📍 ${p.distance} m away` : ""}
+                </div>`;
+            });
+          } else {
+            listDiv.innerHTML += "<p>No cafés found.</p>";
+          }
         })
         .catch(err => console.error("error loading closest cafes:", err));
     });
+
 
     // find cafes within radius
     document.getElementById("cafes_within_radius_button").addEventListener("click", () => {

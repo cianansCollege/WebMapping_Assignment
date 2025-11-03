@@ -19,9 +19,10 @@ class CafeViewSet(viewsets.ReadOnlyModelViewSet):
 def cafe_map(request):
     return render(request, "map_inline.html")
 
-"""returns cafes within hardcoded distance of a point, for original testing"""
+
 @api_view(['GET'])
 def cafes_near(request):
+    """returns cafes within hardcoded distance of a point, for original testing"""
     try:
         lat = float(request.GET.get('lat'))
         lng = float(request.GET.get('lng'))
@@ -35,9 +36,10 @@ def cafes_near(request):
     return Response(serializer.data)
 
 
-"""returns 5 cafes nearest to coordinates given"""
+
 @api_view(['GET'])
 def cafes_closest(request):
+    """returns 5 cafes nearest to coordinates given"""
     try:
         lat = float(request.GET.get('lat'))
         lng = float(request.GET.get('lng'))
@@ -49,9 +51,10 @@ def cafes_closest(request):
     serializer = CafeSerializer(qs, many=True)
     return Response(serializer.data)
 
-"""returns cafes within the quarter specifeied using rank"""
+
 @api_view(['GET'])
 def cafes_within_quarter(request, rank):
+    """returns cafes within the quarter specifeied using rank"""
     try:
         quarter = Quarter.objects.get(rank=rank)
     except Quarter.DoesNotExist:
@@ -61,9 +64,10 @@ def cafes_within_quarter(request, rank):
     serializer = CafeSerializer(qs, many=True)
     return Response(serializer.data)
 
-"""returns quarter boundary"""
+
 @api_view(['GET'])
 def quarters_geojson(request):
+    """returns quarter boundary"""
     data = serialize(
         'geojson',
         Quarter.objects.all(),
@@ -72,9 +76,10 @@ def quarters_geojson(request):
     )
     return JsonResponse(loads(data))
 
-"""returns cafes within radius of a point given by user"""
+
 @api_view(['GET'])
 def cafes_within_radius(request):
+    """returns cafes within radius of a point given by user"""
     try:
         lat = float(request.GET.get('lat'))
         lng = float(request.GET.get('lng'))
