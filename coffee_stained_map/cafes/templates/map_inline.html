@@ -251,6 +251,23 @@
         })
         .catch((err) => console.error("Error loading closest cafes:", err));
     });
+
+    // --- Load all cafés on initial map load ---
+    window.addEventListener("load", () => {
+      fetch("/api/cafes/")
+        .then(res => res.json())
+        .then(data => {
+          if (typeof data === "string") {
+            try { data = JSON.parse(data); } catch (e) {
+              console.error("Bad JSON from /api/cafes/:", e);
+              return;
+            }
+          }
+          addCafes(data);
+        })
+        .catch(err => console.error("Error loading initial cafés:", err));
+    });
+
   </script>
 </body>
 </html>

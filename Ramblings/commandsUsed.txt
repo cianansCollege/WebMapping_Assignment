@@ -274,7 +274,9 @@ can now filter by quarter.
 adding visualisation of quarters to make it easier.
 
 PYTHON ENV:
-source ~/.pyenv/versions/3.12.12/envs/awm_env_312/bin/activate
-pyenv activate awm_env_312
+source .venv311/bin/activate
 
+OKAY WE ARE BACK FINALLY
+
+GOING TO TRY AND FIX THE FACT THAT THE MARKERS DONT SHOW ON FIRST LOAD, BUT DO AFTER.
 
