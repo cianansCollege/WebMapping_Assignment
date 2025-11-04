@@ -2,6 +2,7 @@ from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from rest_framework import serializers
 from .models import Cafe
 
+#the serializer converts the cafe model into GeoJSON for the map display
 class CafeSerializer(GeoFeatureModelSerializer):
     distance = serializers.SerializerMethodField()
 
@@ -10,8 +11,9 @@ class CafeSerializer(GeoFeatureModelSerializer):
         geo_field = 'location'
         fields = ('id', 'name', 'address', 'rating', 'distance')
 
+    #distance (connected to the above line too), is only added when annotated queries are used eg. closest-cafes
     def get_distance(self, obj):
-        # return distance in meters if available (used by cafes_closest view)
+        #return km or meters
         if hasattr(obj, "distance") and obj.distance is not None:
             #return in km if over 1000m
             meters = obj.distance.m

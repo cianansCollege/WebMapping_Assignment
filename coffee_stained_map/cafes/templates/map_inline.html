@@ -49,13 +49,13 @@
     </div>
 
     <div class="row g-3">
-      <!-- sidebar controls -->
+      <!-- sidebar: contains map filters and tools -->
       <div class="col-md-3">
         <div class="card shadow-sm p-3">
-          <h5 class="text-center mb-3">filters & tools</h5>
+          <h5 class="text-center mb-3">Filters & Tools</h5>
 
           <!-- quarter filter -->
-          <label for="quarter-select">filter by quarter:</label>
+          <label for="quarter-select">Filter by Quarter:</label>
           <select id="quarter-select">
             <option value="">-- select quarter --</option>
             <option value="1">North-West</option>
@@ -66,7 +66,7 @@
 
           <!-- find closest cafes -->
           <div id="closest-tool">
-            <h6>find closest cafés</h6>
+            <h6>Find Closest Cafés</h6>
             <label>latitude:</label>
             <input type="number" id="latInput" step="any" placeholder="53.34" />
             <label>longitude:</label>
@@ -76,23 +76,25 @@
 
           <!-- find cafes within radius -->
           <div id="radius-tool">
-            <h6>find cafés within radius</h6>
-            <label>latitude:</label>
+            <h6>Find Cafés Within Radius</h6>
+            <label>Latitude:</label>
             <input id="latRadius" type="number" step="any" placeholder="53.34" />
-            <label>longitude:</label>
+            <label>Longitude:</label>
             <input id="lngRadius" type="number" step="any" placeholder="-6.26" />
-            <label>radius (meters):</label>
+            <label>Radius (meters):</label>
             <input id="radiusInput" type="number" placeholder="1000" />
             <button id="cafes_within_radius_button" class="btn btn-dark mt-2">find</button>
           </div>
 
           <!-- toggle quarters -->
           <div id="toggle-quarters">
-            <button class="btn btn-outline-dark w-100" id="toggle-quarters-button">hide quarters</button>
+            <button class="btn btn-outline-dark w-100" id="toggle-quarters-button">Hide Quarters</button>
           </div>
 
           <!-- cafe list -->
           <div id="cafe-list" class="mt-3"></div>
+
+          <div id="radius-list" class="mt-3"></div>
         </div>
       </div>
 
@@ -110,15 +112,17 @@
 
   <script>
     // setup map
-    const map = L.map("map").setView([53.3498, -6.2603], 13);
+    const map = L.map("map").setView([53.34731, -6.258946], 11);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
 
-    // layers
+    // layers for cafes and quarters and radius
     let markersLayer = L.layerGroup().addTo(map);
     let quarterLayer = L.layerGroup().addTo(map);
+    let radiusCircle = null;
+
 
     // load quarter polygons
     fetch("/api/quarters/")
@@ -133,7 +137,7 @@
       })
       .catch(err => console.error("error loading quarters:", err));
 
-    // add cafes to map
+    // add cafes to map -> GeoJSON FeatureCollection to leaflet markers
     function addCafes(data) {
       markersLayer.clearLayers();
       if (!data || data.type !== "FeatureCollection" || !Array.isArray(data.features)) {
@@ -142,6 +146,8 @@
       }
       data.features.forEach(f => {
         let lat, lng;
+
+        // support both GeoJSON and WKT geometry formats, bug fix from before
         if (f.geometry && f.geometry.type === "Point" && Array.isArray(f.geometry.coordinates)) {
           [lng, lat] = f.geometry.coordinates;
         } else if (typeof f.geometry === "string") {
@@ -232,26 +238,76 @@
     });
 
 
-    // find cafes within radius
-    document.getElementById("cafes_within_radius_button").addEventListener("click", () => {
+    // -------------------------------------------------------
+    // 6. Find Cafés Within Radius (with sidebar results)
+    // -------------------------------------------------------
+    document.getElementById("cafes_within_radius_button").addEventListener("click", async () => {
       const lat = parseFloat(document.getElementById("latRadius").value);
       const lng = parseFloat(document.getElementById("lngRadius").value);
       const radius = parseFloat(document.getElementById("radiusInput").value);
-      if (isNaN(lat) || isNaN(lng) || isNaN(radius)) { alert("enter valid coordinates and radius"); return; }
 
-      fetch(`/api/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`)
-        .then(res => res.json())
-        .then(fc => {
-          if (typeof fc === "string") { try { fc = JSON.parse(fc); } catch { return; } }
-          addCafes(fc);
-          L.circle([lat, lng], { radius, color: "blue", fillOpacity: 0.1 })
-            .addTo(map)
-            .bindPopup(`search area: ${radius} m`)
-            .openPopup();
-          map.setView([lat, lng], 14);
-        })
-        .catch(err => console.error("error loading cafés within radius:", err));
+      if (isNaN(lat) || isNaN(lng) || isNaN(radius)) {
+        alert("Please enter valid coordinates and radius");
+        return;
+      }
+
+      // remove old search circles
+      map.eachLayer(layer => {
+        if (layer instanceof L.Circle && layer.options.color === "blue") {
+          map.removeLayer(layer);
+        }
+      });
+
+      // draw new circle
+      radiusCircle = L.circle([lat, lng], {
+        radius: radius,
+        color: "blue",
+        fillOpacity: 0.1,
+      }).addTo(map)
+        .bindPopup(`Search area: ${radius} m`)
+        .openPopup();
+
+      map.setView([lat, lng], 14);
+
+      try {
+        const res = await fetch(`/api/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`);
+        let data = await res.json();
+        if (typeof data === "string") data = JSON.parse(data);
+
+        // clear sidebar before writing new results
+        const listDiv = document.getElementById("radius-list");
+        listDiv.innerHTML = "<h6 class='fw-semibold mt-3'>Cafés Within Radius:</h6>";
+
+        if (data.type === "FeatureCollection" && Array.isArray(data.features)) {
+          addCafes(data);
+
+          if (data.features.length > 0) {
+            data.features.forEach(f => {
+              const p = f.properties;
+              listDiv.innerHTML += `
+                <div class="border-bottom pb-2 mb-2">
+                  <b>${p.name ?? "Unnamed Café"}</b><br>
+                  ${p.address ?? "No address"}<br>
+                  ⭐ ${p.rating ?? "N/A"}
+                </div>`;
+            });
+          } else {
+            listDiv.innerHTML += "<p>No cafés found within this radius.</p>";
+          }
+        } else {
+          console.warn("Unexpected response format:", data);
+          listDiv.innerHTML = "<p>Error loading cafés.</p>";
+        }
+
+      } catch (err) {
+        console.error("Error loading cafés within radius:", err);
+      }
     });
+
+
+
+
+
 
     // load all cafes on map start
     window.addEventListener("load", () => {
@@ -269,10 +325,10 @@
     document.getElementById("toggle-quarters-button").addEventListener("click", () => {
       if (quartersVisible) {
         map.removeLayer(quarterLayer);
-        document.getElementById("toggle-quarters-button").textContent = "show quarters";
+        document.getElementById("toggle-quarters-button").textContent = "Show Quarters";
       } else {
         map.addLayer(quarterLayer);
-        document.getElementById("toggle-quarters-button").textContent = "hide quarters";
+        document.getElementById("toggle-quarters-button").textContent = "Hide Quarters";
       }
       quartersVisible = !quartersVisible;
     });

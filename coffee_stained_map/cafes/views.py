@@ -12,20 +12,24 @@ from json import loads
 from django.contrib.gis.measure import D
 
 
+#read-only end point to get all cafes as GeoJSON using the serializer
 class CafeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Cafe.objects.all()
     serializer_class = CafeSerializer
 
+#renders the map
 def cafe_map(request):
     return render(request, "map_inline.html")
 
 
+## API endpoint: /api/cafes_near/?lat=...&lng=...
 @api_view(['GET'])
 def cafes_near(request):
     """returns cafes within hardcoded distance of a point, for original testing"""
     try:
         lat = float(request.GET.get('lat'))
         lng = float(request.GET.get('lng'))
+        # Uses PostGIS 'Distance'
         distance = float(request.GET.get('distance', 500))
     except (TypeError, ValueError):
         return Response({"error": "Please supply valid lat, lng, and optional distance (m)"}, status=400)
@@ -36,7 +40,7 @@ def cafes_near(request):
     return Response(serializer.data)
 
 
-
+## API endpoint: /api/closest_cafes/?lat=...&lng=...
 @api_view(['GET'])
 def cafes_closest(request):
     """returns 5 cafes nearest to coordinates given"""
@@ -47,14 +51,16 @@ def cafes_closest(request):
         return Response({"error": "Provide numeric lat and lng"}, status=400)
 
     user_point = Point(lng, lat, srid=4326)
+    # Uses PostGIS 'Distance' and orders cloest 5 by it.
     qs = Cafe.objects.annotate(distance=Distance('location', user_point)).order_by('distance')[:5]
     serializer = CafeSerializer(qs, many=True)
     return Response(serializer.data)
 
 
+# API endpoint: /api/within_quarter/<rank>/
 @api_view(['GET'])
 def cafes_within_quarter(request, rank):
-    """returns cafes within the quarter specifeied using rank"""
+    """returns cafes within the quarter polygon specified using rank"""
     try:
         quarter = Quarter.objects.get(rank=rank)
     except Quarter.DoesNotExist:
@@ -64,10 +70,10 @@ def cafes_within_quarter(request, rank):
     serializer = CafeSerializer(qs, many=True)
     return Response(serializer.data)
 
-
+# API endpoint: /api/quarters/
 @api_view(['GET'])
 def quarters_geojson(request):
-    """returns quarter boundary"""
+    """returns all quarter polygons as GeoJSON feature collection"""
     data = serialize(
         'geojson',
         Quarter.objects.all(),
@@ -77,9 +83,10 @@ def quarters_geojson(request):
     return JsonResponse(loads(data))
 
 
+# API endpoint: /api/cafes_within_radius/?lat=...&lng=...&radius=...
 @api_view(['GET'])
 def cafes_within_radius(request):
-    """returns cafes within radius of a point given by user"""
+    """returns cafes within the radius given mby user of a point given by user"""
     try:
         lat = float(request.GET.get('lat'))
         lng = float(request.GET.get('lng'))

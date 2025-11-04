@@ -39,11 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.gis',
-    'rest_framework',
-    'rest_framework_gis',
 
-    'cafes',
+    #Added apps
+    'django.contrib.gis',#GeoDjango
+    'rest_framework',#Django REST Framework
+    'rest_framework_gis',# spatial serializers for GeoJSON
+
+    'cafes',#my app
 ]
 
 MIDDLEWARE = [
@@ -80,16 +82,18 @@ WSGI_APPLICATION = 'coffee_stained_map.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+#replaced with SQLite postreSQL and PostGIS backend
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'coffee_stained_map',
-        'USER': 'cianan',
-        'PASSWORD': 'awm123',   # your webmapping password
-        'HOST': 'localhost',
-        'PORT': '5432',
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": os.getenv("DB_NAME", "coffee_map"),
+        "USER": os.getenv("DB_USER", "webmapping"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "coffee_pw"),
+        "HOST": os.getenv("DB_HOST", "db"),
+        "PORT": os.getenv("DB_PORT", "5432"),
     }
 }
+
 
 
 # Password validation
@@ -139,5 +143,3 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.BrowsableAPIRenderer",
     )
 }
-
-GDAL_LIBRARY_PATH = '/opt/homebrew/opt/gdal/lib/libgdal.dylib'
