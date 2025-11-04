@@ -52,10 +52,10 @@
       <!-- sidebar: contains map filters and tools -->
       <div class="col-md-3">
         <div class="card shadow-sm p-3">
-          <h5 class="text-center mb-3">filters & tools</h5>
+          <h5 class="text-center mb-3">Filters & Tools</h5>
 
           <!-- quarter filter -->
-          <label for="quarter-select">filter by quarter:</label>
+          <label for="quarter-select">Filter by Quarter:</label>
           <select id="quarter-select">
             <option value="">-- select quarter --</option>
             <option value="1">North-West</option>
@@ -66,7 +66,7 @@
 
           <!-- find closest cafes -->
           <div id="closest-tool">
-            <h6>find closest cafés</h6>
+            <h6>Find Closest Cafés</h6>
             <label>latitude:</label>
             <input type="number" id="latInput" step="any" placeholder="53.34" />
             <label>longitude:</label>
@@ -76,19 +76,19 @@
 
           <!-- find cafes within radius -->
           <div id="radius-tool">
-            <h6>find cafés within radius</h6>
-            <label>latitude:</label>
+            <h6>Find Cafés Within Radius</h6>
+            <label>Latitude:</label>
             <input id="latRadius" type="number" step="any" placeholder="53.34" />
-            <label>longitude:</label>
+            <label>Longitude:</label>
             <input id="lngRadius" type="number" step="any" placeholder="-6.26" />
-            <label>radius (meters):</label>
+            <label>Radius (meters):</label>
             <input id="radiusInput" type="number" placeholder="1000" />
             <button id="cafes_within_radius_button" class="btn btn-dark mt-2">find</button>
           </div>
 
           <!-- toggle quarters -->
           <div id="toggle-quarters">
-            <button class="btn btn-outline-dark w-100" id="toggle-quarters-button">hide quarters</button>
+            <button class="btn btn-outline-dark w-100" id="toggle-quarters-button">Hide Quarters</button>
           </div>
 
           <!-- cafe list -->
@@ -325,10 +325,10 @@
     document.getElementById("toggle-quarters-button").addEventListener("click", () => {
       if (quartersVisible) {
         map.removeLayer(quarterLayer);
-        document.getElementById("toggle-quarters-button").textContent = "show quarters";
+        document.getElementById("toggle-quarters-button").textContent = "Show Quarters";
       } else {
         map.addLayer(quarterLayer);
-        document.getElementById("toggle-quarters-button").textContent = "hide quarters";
+        document.getElementById("toggle-quarters-button").textContent = "Hide Quarters";
       }
       quartersVisible = !quartersVisible;
     });
