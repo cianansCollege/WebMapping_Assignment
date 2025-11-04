@@ -1,312 +1,322 @@
 [
-{
-  "model": "cafes.cafe",
-  "pk": 1,
-  "fields": {
-    "name": "Brew Hub",
-    "address": "95 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.264209 53.334211)",
-    "rating": 4.8
+  {
+    "model": "cafes.cafe",
+    "pk": 1,
+    "fields": {
+      "name": "Brew Hub",
+      "address": "95 Some Street, Dublin",
+      "rating": 4.8,
+      "location": "SRID=4326;POINT (-6.264209 53.334211)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 3,
+    "fields": {
+      "name": "Bean Spot",
+      "address": "87 Some Street, Dublin",
+      "rating": 3.2,
+      "location": "SRID=4326;POINT (-6.26192 53.33741)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 4,
+    "fields": {
+      "name": "Latte Station",
+      "address": "65 Some Street, Dublin",
+      "rating": 4.6,
+      "location": "SRID=4326;POINT (-6.266085 53.351153)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 5,
+    "fields": {
+      "name": "Cafe Central",
+      "address": "78 Some Street, Dublin",
+      "rating": 4.2,
+      "location": "SRID=4326;POINT (-6.276113 53.344251)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 8,
+    "fields": {
+      "name": "Mocha Corner",
+      "address": "90 Some Street, Dublin",
+      "rating": 4.5,
+      "location": "SRID=4326;POINT (-6.266255 53.356568)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 10,
+    "fields": {
+      "name": "Brew Buddy",
+      "address": "43 Some Street, Dublin",
+      "rating": 3.1,
+      "location": "SRID=4326;POINT (-6.256733 53.350245)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 11,
+    "fields": {
+      "name": "Coffee Central",
+      "address": "87 Some Street, Dublin",
+      "rating": 5.0,
+      "location": "SRID=4326;POINT (-6.257379 53.350107)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 12,
+    "fields": {
+      "name": "Brew Station",
+      "address": "7 Some Street, Dublin",
+      "rating": 4.8,
+      "location": "SRID=4326;POINT (-6.26699 53.352415)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 17,
+    "fields": {
+      "name": "Bean Spot",
+      "address": "52 Some Street, Dublin",
+      "rating": 4.9,
+      "location": "SRID=4326;POINT (-6.242691 53.344463)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 18,
+    "fields": {
+      "name": "Coffee Station",
+      "address": "65 Some Street, Dublin",
+      "rating": 4.1,
+      "location": "SRID=4326;POINT (-6.248439 53.355596)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 20,
+    "fields": {
+      "name": "Bean Lounge",
+      "address": "35 Some Street, Dublin",
+      "rating": 4.8,
+      "location": "SRID=4326;POINT (-6.243313 53.336021)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 21,
+    "fields": {
+      "name": "Brew House",
+      "address": "60 Some Street, Dublin",
+      "rating": 4.3,
+      "location": "SRID=4326;POINT (-6.256184 53.347784)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 22,
+    "fields": {
+      "name": "Coffee Station",
+      "address": "88 Some Street, Dublin",
+      "rating": 3.7,
+      "location": "SRID=4326;POINT (-6.241055 53.346068)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 25,
+    "fields": {
+      "name": "Latte Corner",
+      "address": "100 Some Street, Dublin",
+      "rating": 3.3,
+      "location": "SRID=4326;POINT (-6.24647 53.344243)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 26,
+    "fields": {
+      "name": "Coffee Station",
+      "address": "81 Some Street, Dublin",
+      "rating": 4.3,
+      "location": "SRID=4326;POINT (-6.246906 53.343891)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 29,
+    "fields": {
+      "name": "Bean Corner",
+      "address": "82 Some Street, Dublin",
+      "rating": 4.6,
+      "location": "SRID=4326;POINT (-6.277761 53.334272)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 31,
+    "fields": {
+      "name": "Dutch CoffeeShop",
+      "address": "Amsterdam",
+      "rating": 1.0,
+      "location": "SRID=4326;POINT (-6.394462877583678 53.51035961794283)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 28,
+    "fields": {
+      "name": "Coffee Central",
+      "address": "78 Some Street, Dublin",
+      "rating": 4.9,
+      "location": "SRID=4326;POINT (-6.18800200081948 53.389897866131925)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 6,
+    "fields": {
+      "name": "Mocha Lounge",
+      "address": "2 Some Street, Dublin",
+      "rating": 4.7,
+      "location": "SRID=4326;POINT (-6.298521384891971 53.30275108003727)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 7,
+    "fields": {
+      "name": "Brew Spot",
+      "address": "71 Some Street, Dublin",
+      "rating": 3.1,
+      "location": "SRID=4326;POINT (-6.321593121884031 53.307971710302255)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 30,
+    "fields": {
+      "name": "Coffee Corner",
+      "address": "27 Some Street, Dublin",
+      "rating": 3.0,
+      "location": "SRID=4326;POINT (-6.340678599204636 53.387132799860936)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 27,
+    "fields": {
+      "name": "Brew Central",
+      "address": "44 Some Street, Dublin",
+      "rating": 3.1,
+      "location": "SRID=4326;POINT (-6.183855838271993 53.28253988036793)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 24,
+    "fields": {
+      "name": "Espresso Lounge",
+      "address": "24 Some Street, Dublin",
+      "rating": 4.0,
+      "location": "SRID=4326;POINT (-6.257863 53.333415)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 23,
+    "fields": {
+      "name": "Mocha Hub",
+      "address": "100 Some Street, Dublin",
+      "rating": 5.0,
+      "location": "SRID=4326;POINT (-6.240935127343826 53.31533723714275)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 19,
+    "fields": {
+      "name": "Bean Station",
+      "address": "32 Some Street, Dublin",
+      "rating": 4.0,
+      "location": "SRID=4326;POINT (-6.258598110109398 53.34698681324164)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 15,
+    "fields": {
+      "name": "Cafe Corner",
+      "address": "64 Some Street, Dublin",
+      "rating": 3.6,
+      "location": "SRID=4326;POINT (-6.314933131385844 53.30767809413423)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 13,
+    "fields": {
+      "name": "Espresso Station",
+      "address": "30 Some Street, Dublin",
+      "rating": 4.6,
+      "location": "SRID=4326;POINT (-6.21819054454674 53.38767714667617)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 9,
+    "fields": {
+      "name": "Bean Lounge",
+      "address": "7 Some Street, Dublin",
+      "rating": 3.2,
+      "location": "SRID=4326;POINT (-6.328900779303595 53.36992531933404)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 14,
+    "fields": {
+      "name": "Cafe Hub",
+      "address": "38 Some Street, Dublin",
+      "rating": 4.5,
+      "location": "SRID=4326;POINT (-6.298520732463731 53.3184874469027)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 2,
+    "fields": {
+      "name": "Espresso Spot",
+      "address": "12 Some Street, Dublin",
+      "rating": 3.3,
+      "location": "SRID=4326;POINT (-6.262874378345836 53.393482080560275)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 16,
+    "fields": {
+      "name": "Cafe Friends",
+      "address": "44 Some Street, Dublin",
+      "rating": 4.1,
+      "location": "SRID=4326;POINT (-6.209465012964246 53.30507478217534)"
+    }
+  },
+  {
+    "model": "cafes.cafe",
+    "pk": 32,
+    "fields": {
+      "name": "Smooth Sip",
+      "address": "45 Street, Dublin",
+      "rating": 3.0,
+      "location": "SRID=4326;POINT (-6.200890888704063 53.375339328691396)"
+    }
   }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 2,
-  "fields": {
-    "name": "Espresso Spot",
-    "address": "12 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.254473 53.339341)",
-    "rating": 3.3
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 3,
-  "fields": {
-    "name": "Bean Spot",
-    "address": "87 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.26192 53.33741)",
-    "rating": 3.2
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 4,
-  "fields": {
-    "name": "Latte Station",
-    "address": "65 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.266085 53.351153)",
-    "rating": 4.6
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 5,
-  "fields": {
-    "name": "Cafe Central",
-    "address": "78 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.276113 53.344251)",
-    "rating": 4.2
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 6,
-  "fields": {
-    "name": "Mocha Lounge",
-    "address": "2 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.250875 53.334754)",
-    "rating": 4.7
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 7,
-  "fields": {
-    "name": "Brew Spot",
-    "address": "71 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.264437 53.339747)",
-    "rating": 3.1
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 8,
-  "fields": {
-    "name": "Mocha Corner",
-    "address": "90 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.266255 53.356568)",
-    "rating": 4.5
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 9,
-  "fields": {
-    "name": "Bean Lounge",
-    "address": "7 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.257994 53.332188)",
-    "rating": 3.2
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 10,
-  "fields": {
-    "name": "Brew Buddy",
-    "address": "43 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.256733 53.350245)",
-    "rating": 3.1
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 11,
-  "fields": {
-    "name": "Coffee Central",
-    "address": "87 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.257379 53.350107)",
-    "rating": 5.0
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 12,
-  "fields": {
-    "name": "Brew Station",
-    "address": "7 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.26699 53.352415)",
-    "rating": 4.8
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 13,
-  "fields": {
-    "name": "Espresso Station",
-    "address": "30 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.248911 53.339388)",
-    "rating": 4.6
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 14,
-  "fields": {
-    "name": "Cafe Hub",
-    "address": "38 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.241121 53.344051)",
-    "rating": 4.5
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 15,
-  "fields": {
-    "name": "Cafe Corner",
-    "address": "64 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.253745 53.335896)",
-    "rating": 3.6
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 16,
-  "fields": {
-    "name": "Cafe Friends",
-    "address": "44 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.242777 53.354666)",
-    "rating": 4.1
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 17,
-  "fields": {
-    "name": "Bean Spot",
-    "address": "52 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.242691 53.344463)",
-    "rating": 4.9
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 18,
-  "fields": {
-    "name": "Coffee Station",
-    "address": "65 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.248439 53.355596)",
-    "rating": 4.1
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 19,
-  "fields": {
-    "name": "Bean Station",
-    "address": "32 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.257857 53.347204)",
-    "rating": 4.0
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 20,
-  "fields": {
-    "name": "Bean Lounge",
-    "address": "35 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.243313 53.336021)",
-    "rating": 4.8
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 21,
-  "fields": {
-    "name": "Brew House",
-    "address": "60 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.256184 53.347784)",
-    "rating": 4.3
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 22,
-  "fields": {
-    "name": "Coffee Station",
-    "address": "88 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.241055 53.346068)",
-    "rating": 3.7
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 23,
-  "fields": {
-    "name": "Mocha Hub",
-    "address": "100 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.240025 53.344688)",
-    "rating": 5.0
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 24,
-  "fields": {
-    "name": "Espresso Lounge",
-    "address": "24 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.257863 53.333415)",
-    "rating": 4.0
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 25,
-  "fields": {
-    "name": "Latte Corner",
-    "address": "100 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.24647 53.344243)",
-    "rating": 3.3
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 26,
-  "fields": {
-    "name": "Coffee Station",
-    "address": "81 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.246906 53.343891)",
-    "rating": 4.3
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 27,
-  "fields": {
-    "name": "Brew Central",
-    "address": "44 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.246891 53.33662)",
-    "rating": 3.1
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 28,
-  "fields": {
-    "name": "Coffee Central",
-    "address": "78 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.256027 53.349845)",
-    "rating": 4.9
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 29,
-  "fields": {
-    "name": "Bean Corner",
-    "address": "82 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.277761 53.334272)",
-    "rating": 4.6
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 30,
-  "fields": {
-    "name": "Coffee Corner",
-    "address": "27 Some Street, Dublin",
-    "location": "SRID=4326;POINT (-6.267134 53.355791)",
-    "rating": 3.0
-  }
-},
-{
-  "model": "cafes.cafe",
-  "pk": 31,
-  "fields": {
-    "name": "Dutch CoffeeShop",
-    "address": "Amsterdam",
-    "location": "SRID=4326;POINT (-6.272678374370831 53.36082246072014)",
-    "rating": 1.0
-  }
-}
 ]

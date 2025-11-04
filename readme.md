@@ -62,7 +62,7 @@ Setup instructions (local and cloud deployment):
 
         2. Access the application
             Django App → http://127.0.0.1:8000  
-            PgAdmin → http://127.0.0.1:5050
+            PgAdmin → http://127.0.0.1:8000/admin/
 
 
 API Documenation:
