@@ -95,6 +95,19 @@ Known Issues:
     -List of cafes appears below map.
     -No way for user to get current coordinates/click on screen for coordinates. Clunky design.
 
+Architecture:
+    Frontend(Leaflet and Bootstrap)
+        Sends/Receieves data via HTTP
+    ↓
+    API Layer(Django REST Framework)
+        Executes the spatial queries
+    ↓
+    Database
+        Returns requested info
+    ↓
+    Docker(Web + Database + PgAdmin)
+    
+
 Author:
     Cianán Finn, TU856
 
