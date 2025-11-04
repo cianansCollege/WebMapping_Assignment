@@ -12,6 +12,7 @@ services:
 
   web:
     build: .
+    command: ./wait_for_db.sh python manage.py runserver 0.0.0.0:8000
     environment:
       - DB_NAME=coffee_map
       - DB_USER=webmapping
@@ -22,6 +23,9 @@ services:
       - db
     ports:
       - "8000:8000"
+
+    volumes:
+      - .:/app
 
   pgadmin:
     image: dpage/pgadmin4

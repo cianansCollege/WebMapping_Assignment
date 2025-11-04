@@ -93,6 +93,8 @@
 
           <!-- cafe list -->
           <div id="cafe-list" class="mt-3"></div>
+
+          <div id="radius-list" class="mt-3"></div>
         </div>
       </div>
 
@@ -236,6 +238,9 @@
     });
 
 
+    // -------------------------------------------------------
+    // 6. Find Cafés Within Radius (with sidebar results)
+    // -------------------------------------------------------
     document.getElementById("cafes_within_radius_button").addEventListener("click", async () => {
       const lat = parseFloat(document.getElementById("latRadius").value);
       const lng = parseFloat(document.getElementById("lngRadius").value);
@@ -246,14 +251,14 @@
         return;
       }
 
-      // remove old circles
+      // remove old search circles
       map.eachLayer(layer => {
-        if (layer instanceof L.Circle) {
+        if (layer instanceof L.Circle && layer.options.color === "blue") {
           map.removeLayer(layer);
         }
       });
 
-      // draw a new radius circle
+      // draw new circle
       radiusCircle = L.circle([lat, lng], {
         radius: radius,
         color: "blue",
@@ -264,30 +269,41 @@
 
       map.setView([lat, lng], 14);
 
-      // get cafes within radius
       try {
         const res = await fetch(`/api/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`);
         let data = await res.json();
+        if (typeof data === "string") data = JSON.parse(data);
 
-        if (typeof data === "string") {
-          try { data = JSON.parse(data); } catch (e) {
-            console.error("Bad JSON:", e);
-            return;
-          }
-        }
+        // clear sidebar before writing new results
+        const listDiv = document.getElementById("radius-list");
+        listDiv.innerHTML = "<h6 class='fw-semibold mt-3'>Cafés Within Radius:</h6>";
 
         if (data.type === "FeatureCollection" && Array.isArray(data.features)) {
           addCafes(data);
-          if (data.features.length === 0) {
-            alert("No cafés found within this radius.");
+
+          if (data.features.length > 0) {
+            data.features.forEach(f => {
+              const p = f.properties;
+              listDiv.innerHTML += `
+                <div class="border-bottom pb-2 mb-2">
+                  <b>${p.name ?? "Unnamed Café"}</b><br>
+                  ${p.address ?? "No address"}<br>
+                  ⭐ ${p.rating ?? "N/A"}
+                </div>`;
+            });
+          } else {
+            listDiv.innerHTML += "<p>No cafés found within this radius.</p>";
           }
         } else {
-          console.warn("Unexpected response:", data);
+          console.warn("Unexpected response format:", data);
+          listDiv.innerHTML = "<p>Error loading cafés.</p>";
         }
+
       } catch (err) {
         console.error("Error loading cafés within radius:", err);
       }
     });
+
 
 
 
