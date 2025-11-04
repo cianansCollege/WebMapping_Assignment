@@ -49,7 +49,7 @@
     </div>
 
     <div class="row g-3">
-      <!-- sidebar controls -->
+      <!-- sidebar: contains map filters and tools -->
       <div class="col-md-3">
         <div class="card shadow-sm p-3">
           <h5 class="text-center mb-3">filters & tools</h5>
@@ -116,14 +116,10 @@
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
 
-    // layers
+    // layers for cafes and quarters and radius
     let markersLayer = L.layerGroup().addTo(map);
     let quarterLayer = L.layerGroup().addTo(map);
-    if (radiusCircle) {
-      map.removeLayer(radiusCircle);
-      radiusCircle = null;
-    }
-
+    let radiusCircle = null;
 
 
     // load quarter polygons
@@ -139,7 +135,7 @@
       })
       .catch(err => console.error("error loading quarters:", err));
 
-    // add cafes to map
+    // add cafes to map -> GeoJSON FeatureCollection to leaflet markers
     function addCafes(data) {
       markersLayer.clearLayers();
       if (!data || data.type !== "FeatureCollection" || !Array.isArray(data.features)) {
@@ -148,6 +144,8 @@
       }
       data.features.forEach(f => {
         let lat, lng;
+
+        // support both GeoJSON and WKT geometry formats, bug fix from before
         if (f.geometry && f.geometry.type === "Point" && Array.isArray(f.geometry.coordinates)) {
           [lng, lat] = f.geometry.coordinates;
         } else if (typeof f.geometry === "string") {
@@ -248,14 +246,14 @@
         return;
       }
 
-      // ✅ remove *any* previous circle (not just the one we tracked)
+      // remove old circles
       map.eachLayer(layer => {
-        if (layer instanceof L.Circle && layer.options.color === "blue") {
+        if (layer instanceof L.Circle) {
           map.removeLayer(layer);
         }
       });
 
-      // ✅ draw a new radius circle
+      // draw a new radius circle
       radiusCircle = L.circle([lat, lng], {
         radius: radius,
         color: "blue",
@@ -266,7 +264,7 @@
 
       map.setView([lat, lng], 14);
 
-      // ✅ fetch cafes within radius
+      // get cafes within radius
       try {
         const res = await fetch(`/api/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`);
         let data = await res.json();

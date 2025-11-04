@@ -39,11 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.gis',
-    'rest_framework',
-    'rest_framework_gis',
 
-    'cafes',
+    #Added apps
+    'django.contrib.gis',#GeoDjango
+    'rest_framework',#Django REST Framework
+    'rest_framework_gis',# spatial serializers for GeoJSON
+
+    'cafes',#my app
 ]
 
 MIDDLEWARE = [
@@ -80,6 +82,7 @@ WSGI_APPLICATION = 'coffee_stained_map.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+#replaced with SQLite postreSQL and PostGIS backend
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
