@@ -7,8 +7,11 @@ router = DefaultRouter()
 router.register(r'cafes', CafeViewSet, basename='cafe')
 
 urlpatterns = [
+    # REST API routes (automatically handles /api/cafes/)
     path('', include(router.urls)),
-    path('nearby/', cafes_near, name='cafes_near'),
+
+    #my api endpoints
+    path('nearby/', cafes_near, name='cafes_near'), # for testing 
     path('closest_cafes/', cafes_closest, name='cafes_closest'),
     path('within_quarter/<int:rank>/', cafes_within_quarter, name='cafes_within_quarter'),
     path('quarters/', quarters_geojson, name='quarters_geojson'),
