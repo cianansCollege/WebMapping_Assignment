@@ -119,6 +119,12 @@
     // layers
     let markersLayer = L.layerGroup().addTo(map);
     let quarterLayer = L.layerGroup().addTo(map);
+    if (radiusCircle) {
+      map.removeLayer(radiusCircle);
+      radiusCircle = null;
+    }
+
+
 
     // load quarter polygons
     fetch("/api/quarters/")
@@ -232,26 +238,62 @@
     });
 
 
-    // find cafes within radius
-    document.getElementById("cafes_within_radius_button").addEventListener("click", () => {
+    document.getElementById("cafes_within_radius_button").addEventListener("click", async () => {
       const lat = parseFloat(document.getElementById("latRadius").value);
       const lng = parseFloat(document.getElementById("lngRadius").value);
       const radius = parseFloat(document.getElementById("radiusInput").value);
-      if (isNaN(lat) || isNaN(lng) || isNaN(radius)) { alert("enter valid coordinates and radius"); return; }
 
-      fetch(`/api/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`)
-        .then(res => res.json())
-        .then(fc => {
-          if (typeof fc === "string") { try { fc = JSON.parse(fc); } catch { return; } }
-          addCafes(fc);
-          L.circle([lat, lng], { radius, color: "blue", fillOpacity: 0.1 })
-            .addTo(map)
-            .bindPopup(`search area: ${radius} m`)
-            .openPopup();
-          map.setView([lat, lng], 14);
-        })
-        .catch(err => console.error("error loading cafés within radius:", err));
+      if (isNaN(lat) || isNaN(lng) || isNaN(radius)) {
+        alert("Please enter valid coordinates and radius");
+        return;
+      }
+
+      // ✅ remove *any* previous circle (not just the one we tracked)
+      map.eachLayer(layer => {
+        if (layer instanceof L.Circle && layer.options.color === "blue") {
+          map.removeLayer(layer);
+        }
+      });
+
+      // ✅ draw a new radius circle
+      radiusCircle = L.circle([lat, lng], {
+        radius: radius,
+        color: "blue",
+        fillOpacity: 0.1,
+      }).addTo(map)
+        .bindPopup(`Search area: ${radius} m`)
+        .openPopup();
+
+      map.setView([lat, lng], 14);
+
+      // ✅ fetch cafes within radius
+      try {
+        const res = await fetch(`/api/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`);
+        let data = await res.json();
+
+        if (typeof data === "string") {
+          try { data = JSON.parse(data); } catch (e) {
+            console.error("Bad JSON:", e);
+            return;
+          }
+        }
+
+        if (data.type === "FeatureCollection" && Array.isArray(data.features)) {
+          addCafes(data);
+          if (data.features.length === 0) {
+            alert("No cafés found within this radius.");
+          }
+        } else {
+          console.warn("Unexpected response:", data);
+        }
+      } catch (err) {
+        console.error("Error loading cafés within radius:", err);
+      }
     });
+
+
+
+
 
     // load all cafes on map start
     window.addEventListener("load", () => {
