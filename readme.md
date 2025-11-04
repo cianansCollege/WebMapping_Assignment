@@ -7,7 +7,7 @@ README.md including:
     Known issues or limitations
     API documentation (if applicable)
 
-Application Description:
+**Application Description**:
     My project is a web application that lets a user view cafes nearby on an interactive map.
 
     Users can:
