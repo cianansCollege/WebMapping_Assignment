@@ -106,6 +106,11 @@ Architecture:
         Returns requested info
     ↓
     Docker(Web + Database + PgAdmin)
+
+Test:
+docker exec -it coffee_stained_map-web-1 bash
+python manage.py test cafes
+
     
 
 Author:
