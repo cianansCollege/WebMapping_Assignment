@@ -63,6 +63,11 @@
             <option value="4">South-East</option>
           </select>
 
+          <!-- toggle quarters -->
+          <div id="toggle-quarters">
+            <button class="btn btn-outline-dark w-100" id="toggle-quarters-button">Hide Quarters</button>
+          </div>
+
           <!-- find closest cafes -->
           <div id="closest-tool">
             <h6>Find Closest Cafés</h6>
@@ -83,11 +88,6 @@
             <label>Radius (meters):</label>
             <input id="radiusInput" type="number" placeholder="1000" />
             <button id="cafes_within_radius_button" class="btn btn-dark mt-2">find</button>
-          </div>
-
-          <!-- toggle quarters -->
-          <div id="toggle-quarters">
-            <button class="btn btn-outline-dark w-100" id="toggle-quarters-button">Hide Quarters</button>
           </div>
 
           <!-- cafe list -->
@@ -237,9 +237,7 @@
     });
 
 
-    // -------------------------------------------------------
-    // 6. Find Cafés Within Radius (with sidebar results)
-    // -------------------------------------------------------
+    // cafes within radius
     document.getElementById("cafes_within_radius_button").addEventListener("click", async () => {
       const lat = parseFloat(document.getElementById("latRadius").value);
       const lng = parseFloat(document.getElementById("lngRadius").value);

@@ -1,4 +1,4 @@
-# 🐍 Base image: Python 3.11 slim for efficiency
+# Base image: Python 3.11 slim
 FROM python:3.11-slim
 
 # Prevents Python from writing pyc files & buffering stdout
