@@ -111,7 +111,10 @@ Test:
 docker exec -it coffee_stained_map-web-1 bash
 python manage.py test cafes
 
-    
+
+Connect to psql:
+docker exec -it coffee_stained_map-db-1 psql -U webmapping -d coffee_map     
+
 
 Author:
     Cianán Finn, TU856
