@@ -149,10 +149,7 @@
         // support both GeoJSON and WKT geometry formats, bug fix from before
         if (f.geometry && f.geometry.type === "Point" && Array.isArray(f.geometry.coordinates)) {
           [lng, lat] = f.geometry.coordinates;
-        } else if (typeof f.geometry === "string") {
-          const coordsText = f.geometry.replace("SRID=4326;POINT (", "").replace(")", "");
-          [lng, lat] = coordsText.trim().split(/\s+/).map(Number);
-        }
+        } 
         if (lat && lng) {
           L.marker([lat, lng])
             .addTo(markersLayer)
