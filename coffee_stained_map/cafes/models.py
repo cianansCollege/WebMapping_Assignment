@@ -3,23 +3,6 @@ from django.contrib.gis.db import models
 from django.db.models import Index
 from django.contrib.gis.db import models
 
-#model for quarter in project, to divide dublin in 4 polygons
-class Quarter(models.Model):
-    name = models.CharField(max_length=15)
-    #eg. (name: north-east, rank 1), (name: south-west, rank: 4)
-    rank = models.IntegerField()
-    boundary = models.PolygonField()
-
-    def __str__(self):
-        return self.name
-    
-    #GIST spatial index to speed up the within queries
-    class Meta:
-        indexes = [
-            Index(fields=["boundary"], name="quarter_boundary_gist", opclasses=["gist"])
-        ]
-    
-
 class CafeOSM(models.Model):
     ogc_fid = models.AutoField(primary_key=True)
     osm_id = models.CharField(max_length=100, null=True, blank=True)
@@ -37,15 +20,19 @@ class CafeOSM(models.Model):
 
 class County(models.Model):
     gid = models.IntegerField(primary_key=True)
-    co_id = models.CharField(max_length=20, null=True)
-    english = models.CharField(max_length=100, null=True)
-    scribe = models.CharField(max_length=10, null=True)
-    gaeilge = models.CharField(max_length=100, null=True)
-    logainm_id = models.CharField(max_length=20, null=True)
-    county = models.CharField(max_length=100, null=True)
-    province = models.CharField(max_length=50, null=True)
+    co_id = models.CharField(max_length=20, null=True, db_column="co_id")
+    gaeilge = models.CharField(max_length=100, null=True, db_column="gaeilge")
+    english = models.CharField(max_length=100, null=True, db_column="english")
+    scribes = models.CharField(max_length=10, null=True, db_column="scribes")
+    logainm_id = models.CharField(max_length=20, null=True, db_column="logainm_id")
+    county = models.CharField(max_length=100, null=True, db_column="county")
+    province = models.CharField(max_length=50, null=True, db_column="province")
     geometry = models.MultiPolygonField(srid=4326)
 
     class Meta:
         managed = False
         db_table = "counties"
+
+
+    
+    # add indexing later

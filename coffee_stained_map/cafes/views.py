@@ -8,7 +8,7 @@ from django.contrib.gis.measure import D
 from rest_framework.decorators import api_view
 from rest_framework import viewsets
 
-from .models import CafeOSM, Quarter, County
+from .models import CafeOSM, County
 from .serializers import CafeOSMSerializer
 
 import json
@@ -58,51 +58,6 @@ def cafes_closest(request):
     serializer = CafeOSMSerializer(cafes, many=True)
     return JsonResponse(serializer.data, safe=False)
 
-
-
-# API endpoint: /api/within_quarter/<rank>/
-@api_view(['GET'])
-def cafes_within_quarter(request, rank):
-    # Get the quarter by rank (1–4)
-    try:
-        quarter = Quarter.objects.get(rank=rank)
-    except Quarter.DoesNotExist:
-        return JsonResponse({"error": "Quarter not found"}, status=404)
-
-    # Spatial query: ST_Within(cafe, quarter boundary)
-    cafes = CafeOSM.objects.filter(
-        geometry__within=quarter.boundary
-    )
-
-    serializer = CafeOSMSerializer(cafes, many=True)
-    return JsonResponse(serializer.data, safe=False)
-
-
-
-# API endpoint: /api/quarters/
-@api_view(['GET'])
-def quarters_geojson(request):
-    quarters = Quarter.objects.all()
-
-    features = []
-    for q in quarters:
-        features.append({
-            "type": "Feature",
-            "geometry": json.loads(q.boundary.geojson),
-            "properties": {
-                "name": q.name,
-                "rank": q.rank,
-            }
-        })
-
-    return JsonResponse({
-        "type": "FeatureCollection",
-        "features": features
-    })
-
-
-
-
 # API endpoint: /api/cafes_within_radius/?lat=...&lng=...&radius=...
 @api_view(['GET'])
 def cafes_within_radius(request):
@@ -125,12 +80,16 @@ def counties(request):
 
     features = []
     for c in counties:
+        english = c.english.title() if c.english else None
+        gaeilge = c.gaeilge.title() if c.gaeilge else None
+        county_name = c.county.title() if c.county else None
+        
         features.append({
             "type": "Feature",
             "geometry": json.loads(c.geometry.geojson),
             "properties": {
-                "gaeilge": c.gaeilge,
-                "name": c.english,        
+                "gaeilge_name": c.gaeilge,
+                "english_name": c.english.title(),        
                 "province": c.province,
                 "county": c.county,
             }
@@ -155,3 +114,4 @@ def cafes_in_county(request, county_name):
     serializer = CafeOSMSerializer(cafes, many=True)
     return JsonResponse(serializer.data, safe=False)
 
+# add cafes within county and filter by county later

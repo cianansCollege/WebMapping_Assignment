@@ -57,19 +57,15 @@
         <div class="card shadow-sm p-3">
           <h5 class="text-center mb-3">Filters & Tools</h5>
 
-          <!-- quarter filter -->
-          <label for="quarter-select">Filter by Quarter:</label>
-          <select id="quarter-select">
-            <option value="">-- select quarter --</option>
-            <option value="1">North-West</option>
-            <option value="2">North-East</option>
-            <option value="3">South-West</option>
-            <option value="4">South-East</option>
-          </select>
+      <!-- county filter -->
+      <label for="county-select">Filter by County:</label>
+      <select id="county-select">
+        <option value="">-- select county --</option>
+      </select>
 
           <!-- toggle quarters -->
-          <div id="toggle-quarters">
-            <button class="btn btn-outline-dark w-100" id="toggle-quarters-button">Hide Quarters</button>
+          <div id="toggle-counties">
+            <button class="btn btn-outline-dark w-100" id="toggle-counties-button">Hide Counties</button>
           </div>
 
           <!-- find closest cafes -->
@@ -127,22 +123,37 @@
     // layers for cafes and quarters and radius
     let markersLayer = L.markerClusterGroup();
     map.addLayer(markersLayer);
-    let quarterLayer = L.layerGroup().addTo(map);
+    let countiesLayer = L.layerGroup().addTo(map);
     let radiusCircle = null;
 
-
-    // load quarter polygons
-    fetch("/api/quarters/")
+    // load county polygons
+    fetch("/api/counties/")
       .then(res => res.json())
       .then(geojson => {
         L.geoJSON(geojson, {
-          style: { color: "#6f4e37", weight: 1, fillOpacity: 0 },
+          style: { color: "#ff8800", weight: 1, fillOpacity: 0 },
           onEachFeature: (feature, layer) => {
-            layer.bindPopup(`<b>${feature.properties.name}</b>`);
-          },
-        }).addTo(quarterLayer);
+            const props = feature.properties;
+            layer.bindPopup(`
+              <b>${props.english_name} , ${props.province}</b><br>
+              <i>${props.gaeilge_name}</i><br>
+            `);
+          }
+        }).addTo(countiesLayer);
+
+        // populate county dropdown
+        const select = document.getElementById("county-select");
+        geojson.features.forEach(f => {
+          const option = document.createElement("option");
+          option.value = f.properties.english_name;
+          option.textContent = f.properties.english_name;
+          select.appendChild(option);
+        });
       })
-      .catch(err => console.error("error loading quarters:", err));
+      .catch(err => console.error("error loading counties:", err));
+
+      
+
 
     function addCafes(data) {
       markersLayer.clearLayers();
@@ -170,23 +181,32 @@
       markersLayer.addLayer(geoLayer);
     }
 
+    // filter by county
+    document.getElementById("county-select").addEventListener("change", async function () {
+      const countyName = this.value;
 
-    // filter by quarter
-    document.getElementById("quarter-select").addEventListener("change", async function () {
-      const quarterId = this.value;
-      const url = quarterId ? `/api/within_quarter/${quarterId}/` : "/api/cafes/";
+      // Reset to all cafes
+      if (!countyName) {
+        fetch("/api/cafes_osm/")
+          .then(r => r.json())
+          .then(addCafes);
+        return;
+      }
+
       try {
-        const res = await fetch(url);
-        let data = await res.json();
-        if (typeof data === "string") {
-          try { data = JSON.parse(data); } catch (e) { return; }
-        }
+        const res = await fetch(`/api/cafes_in_county/${countyName}/`);
+        const data = await res.json();
         addCafes(data);
-        if (!data.features?.length) alert("no cafés found in this quarter.");
+
+        if (!data.features?.length) {
+          alert("No cafés found in this county.");
+        }
       } catch (err) {
-        console.error("error loading cafes for quarter:", err);
+        console.error("error loading cafés by county:", err);
       }
     });
+
+
 
     // find closest cafes
     document.getElementById("closest_cafes_button").addEventListener("click", () => {
@@ -323,16 +343,16 @@
     });
 
     // toggle quarters
-    let quartersVisible = true;
-    document.getElementById("toggle-quarters-button").addEventListener("click", () => {
-      if (quartersVisible) {
-        map.removeLayer(quarterLayer);
-        document.getElementById("toggle-quarters-button").textContent = "Show Quarters";
+    let countiesVisible = true;
+    document.getElementById("toggle-counties-button").addEventListener("click", () => {
+      if (countiesVisible) {
+        map.removeLayer(countiesLayer);
+        document.getElementById("toggle-counties-button").textContent = "Show Counties";
       } else {
-        map.addLayer(quarterLayer);
-        document.getElementById("toggle-quarters-button").textContent = "Hide Quarters";
+        map.addLayer(countiesLayer);
+        document.getElementById("toggle-counties-button").textContent = "Hide Counties";
       }
-      quartersVisible = !quartersVisible;
+      countiesVisible = !countiesVisible;
     });
   </script>
 </body>
