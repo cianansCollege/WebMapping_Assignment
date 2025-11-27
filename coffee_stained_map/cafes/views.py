@@ -8,7 +8,7 @@ from django.contrib.gis.measure import D
 from rest_framework.decorators import api_view
 from rest_framework import viewsets
 
-from .models import CafeOSM, Quarter
+from .models import CafeOSM, Quarter, County
 from .serializers import CafeOSMSerializer
 
 import json
@@ -118,3 +118,40 @@ def cafes_within_radius(request):
 
     serializer = CafeOSMSerializer(cafes, many=True)
     return JsonResponse(serializer.data, safe=False)
+
+@api_view(['GET'])
+def counties(request):
+    counties = County.objects.all()
+
+    features = []
+    for c in counties:
+        features.append({
+            "type": "Feature",
+            "geometry": json.loads(c.geometry.geojson),
+            "properties": {
+                "gaeilge": c.gaeilge,
+                "name": c.english,        
+                "province": c.province,
+                "county": c.county,
+            }
+        })
+
+    return JsonResponse({
+        "type": "FeatureCollection",
+        "features": features
+    })
+
+@api_view(['GET'])
+def cafes_in_county(request, county_name):
+    try:
+        county = County.objects.get(english__iexact=county_name)
+    except County.DoesNotExist:
+        return JsonResponse({"error": "County not found"}, status=404)
+
+    cafes = CafeOSM.objects.filter(
+        geometry__within=county.geometry
+    )
+
+    serializer = CafeOSMSerializer(cafes, many=True)
+    return JsonResponse(serializer.data, safe=False)
+

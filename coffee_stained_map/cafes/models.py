@@ -33,3 +33,19 @@ class CafeOSM(models.Model):
     class Meta:
         db_table = 'cafes_osm'
         managed = False
+
+
+class County(models.Model):
+    gid = models.IntegerField(primary_key=True)
+    co_id = models.CharField(max_length=20, null=True)
+    english = models.CharField(max_length=100, null=True)
+    scribe = models.CharField(max_length=10, null=True)
+    gaeilge = models.CharField(max_length=100, null=True)
+    logainm_id = models.CharField(max_length=20, null=True)
+    county = models.CharField(max_length=100, null=True)
+    province = models.CharField(max_length=50, null=True)
+    geometry = models.MultiPolygonField(srid=4326)
+
+    class Meta:
+        managed = False
+        db_table = "counties"
