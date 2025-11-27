@@ -10,6 +10,10 @@
   <!-- bootstrap css -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+
+
   <style>
     body {
       background-color: #f8f9fa;
@@ -109,6 +113,9 @@
   <!-- bootstrap js -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+  <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+
   <script>
     // setup map
     const map = L.map("map").setView([53.34731, -6.258946], 11);
@@ -118,7 +125,8 @@
     }).addTo(map);
 
     // layers for cafes and quarters and radius
-    let markersLayer = L.layerGroup().addTo(map);
+    let markersLayer = L.markerClusterGroup();
+    map.addLayer(markersLayer);
     let quarterLayer = L.layerGroup().addTo(map);
     let radiusCircle = null;
 
@@ -136,32 +144,32 @@
       })
       .catch(err => console.error("error loading quarters:", err));
 
-    // add cafes to map -> GeoJSON FeatureCollection to leaflet markers
     function addCafes(data) {
       markersLayer.clearLayers();
+
       if (!data || data.type !== "FeatureCollection" || !Array.isArray(data.features)) {
-        console.warn("unexpected data format:", data);
+        console.warn("Unexpected data format:", data);
         return;
       }
-      data.features.forEach(f => {
-        let lat, lng;
 
-        // support both GeoJSON and WKT geometry formats, bug fix from before
-        if (f.geometry && f.geometry.type === "Point" && Array.isArray(f.geometry.coordinates)) {
-          [lng, lat] = f.geometry.coordinates;
-        } 
-        if (lat && lng) {
-          L.marker([lat, lng])
-            .addTo(markersLayer)
-            .on("click", () => map.setView([lat, lng], 16))
-            .bindPopup(
-              `<b>${f.properties?.name ?? "Unnamed Café"}</b><br>
-              ${f.properties?.address ?? "No address"}<br>
-              ⭐ ${f.properties?.rating ?? "N/A"}`
-            );
+      const geoLayer = L.geoJSON(data, {
+        pointToLayer: (feature, latlng) => {
+          return L.marker(latlng);
+        },
+        onEachFeature: (feature, layer) => {
+          const p = feature.properties || {};
+          layer.bindPopup(`
+            <b>${p.name ?? "Unnamed Café"}</b><br>
+            ${p.addr_street ?? ""}<br>
+            ${p.addr_city ?? ""}<br>
+            ${p.amenity ?? ""}
+          `);
         }
       });
+
+      markersLayer.addLayer(geoLayer);
     }
+
 
     // filter by quarter
     document.getElementById("quarter-select").addEventListener("change", async function () {
