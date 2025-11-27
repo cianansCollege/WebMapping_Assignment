@@ -23,6 +23,13 @@ class CafeOSMViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CafeOSMSerializer
 
 
+def safe_title(value):
+    if isinstance(value, str):
+        value = value.strip()
+        return value.title() if value else None
+    return None
+
+
 ## API endpoint: /api/cafes_near/?lat=...&lng=...
 @api_view(['GET'])
 def cafes_near(request):
@@ -80,18 +87,14 @@ def counties(request):
 
     features = []
     for c in counties:
-        english = c.english.title() if c.english else None
-        gaeilge = c.gaeilge.title() if c.gaeilge else None
-        county_name = c.county.title() if c.county else None
-        
         features.append({
             "type": "Feature",
             "geometry": json.loads(c.geometry.geojson),
             "properties": {
-                "gaeilge_name": c.gaeilge,
-                "english_name": c.english.title(),        
-                "province": c.province,
-                "county": c.county,
+                "english_name": safe_title(c.english),
+                "gaeilge_name": safe_title(c.gaeilge),
+                "province": safe_title(c.province),
+                "county": safe_title(c.county),
             }
         })
 
@@ -99,6 +102,7 @@ def counties(request):
         "type": "FeatureCollection",
         "features": features
     })
+
 
 @api_view(['GET'])
 def cafes_in_county(request, county_name):

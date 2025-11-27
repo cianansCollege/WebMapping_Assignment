@@ -135,7 +135,7 @@
           onEachFeature: (feature, layer) => {
             const props = feature.properties;
             layer.bindPopup(`
-              <b>${props.english_name} , ${props.province}</b><br>
+              <b>${props.english_name}, ${props.province}</b><br>
               <i>${props.gaeilge_name}</i><br>
             `);
           }
