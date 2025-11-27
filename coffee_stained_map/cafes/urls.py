@@ -2,7 +2,6 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from .views import (
-    CafeViewSet,
     CafeOSMViewSet,
     cafes_near,
     cafes_closest,
@@ -12,7 +11,6 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'cafes', CafeViewSet, basename='cafe')
 router.register(r'cafes_osm', CafeOSMViewSet, basename='cafes_osm')
 
 urlpatterns = [

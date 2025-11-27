@@ -1,106 +1,120 @@
-from rest_framework import viewsets
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
+from django.shortcuts import render
 from django.http import JsonResponse
+
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
-from django.core.serializers import serialize
-from .models import Cafe, Quarter
-from .serializers import CafeSerializer
-from django.shortcuts import render
-from json import loads
 from django.contrib.gis.measure import D
-from .models import CafeOSM
+
+from rest_framework.decorators import api_view
+from rest_framework import viewsets
+
+from .models import CafeOSM, Quarter
 from .serializers import CafeOSMSerializer
 
+import json
 
-#read-only end point to get all cafes as GeoJSON using the serializer
-class CafeViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Cafe.objects.all()
-    serializer_class = CafeSerializer
 
 #renders the map
 def cafe_map(request):
     return render(request, "map_inline.html")
 
+class CafeOSMViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = CafeOSM.objects.all()
+    serializer_class = CafeOSMSerializer
+
 
 ## API endpoint: /api/cafes_near/?lat=...&lng=...
 @api_view(['GET'])
 def cafes_near(request):
-    """returns cafes within hardcoded distance of a point, for original testing"""
-    try:
-        lat = float(request.GET.get('lat'))
-        lng = float(request.GET.get('lng'))
-        # Uses PostGIS 'Distance'
-        distance = float(request.GET.get('distance', 500))
-    except (TypeError, ValueError):
-        return Response({"error": "Please supply valid lat, lng, and optional distance (m)"}, status=400)
+    lat = float(request.GET.get("lat"))
+    lng = float(request.GET.get("lng"))
+    radius = float(request.GET.get("radius", 1000))
 
-    ref_point = Point(lng, lat, srid=4326)
-    nearby = Cafe.objects.filter(location__distance_lte=(ref_point, distance))
-    serializer = CafeSerializer(nearby, many=True)
-    return Response(serializer.data)
+    pt = Point(lng, lat, srid=4326)
+
+    cafes = CafeOSM.objects.filter(
+        geometry__distance_lte=(pt, D(m=radius))
+    )
+
+    serializer = CafeOSMSerializer(cafes, many=True)
+    return JsonResponse(serializer.data, safe=False)
 
 
 ## API endpoint: /api/closest_cafes/?lat=...&lng=...
 @api_view(['GET'])
 def cafes_closest(request):
-    """returns 5 cafes nearest to coordinates given"""
-    try:
-        lat = float(request.GET.get('lat'))
-        lng = float(request.GET.get('lng'))
-    except (TypeError, ValueError):
-        return Response({"error": "Provide numeric lat and lng"}, status=400)
+    lat = float(request.GET.get("lat"))
+    lng = float(request.GET.get("lng"))
+    limit = int(request.GET.get("limit", 5))
 
-    user_point = Point(lng, lat, srid=4326)
-    # Uses PostGIS 'Distance' and orders cloest 5 by it.
-    qs = Cafe.objects.annotate(distance=Distance('location', user_point)).order_by('distance')[:5]
-    serializer = CafeSerializer(qs, many=True)
-    return Response(serializer.data)
+    user_location = Point(lng, lat, srid=4326)
+
+    cafes = (
+        CafeOSM.objects
+        .annotate(distance=Distance("geometry", user_location))
+        .order_by("distance")[:limit]
+    )
+
+    serializer = CafeOSMSerializer(cafes, many=True)
+    return JsonResponse(serializer.data, safe=False)
+
 
 
 # API endpoint: /api/within_quarter/<rank>/
 @api_view(['GET'])
 def cafes_within_quarter(request, rank):
-    """returns cafes within the quarter polygon specified using rank"""
+    # Get the quarter by rank (1–4)
     try:
         quarter = Quarter.objects.get(rank=rank)
     except Quarter.DoesNotExist:
-        return Response({"error": f"No quarter found with rank {rank}"}, status=404)
+        return JsonResponse({"error": "Quarter not found"}, status=404)
 
-    qs = Cafe.objects.filter(location__within=quarter.boundary)
-    serializer = CafeSerializer(qs, many=True)
-    return Response(serializer.data)
+    # Spatial query: ST_Within(cafe, quarter boundary)
+    cafes = CafeOSM.objects.filter(
+        geometry__within=quarter.boundary
+    )
+
+    serializer = CafeOSMSerializer(cafes, many=True)
+    return JsonResponse(serializer.data, safe=False)
+
+
 
 # API endpoint: /api/quarters/
 @api_view(['GET'])
 def quarters_geojson(request):
-    """returns all quarter polygons as GeoJSON feature collection"""
-    data = serialize(
-        'geojson',
-        Quarter.objects.all(),
-        geometry_field='boundary',
-        fields=('name', 'rank'),
-    )
-    return JsonResponse(loads(data))
+    quarters = Quarter.objects.all()
+
+    features = []
+    for q in quarters:
+        features.append({
+            "type": "Feature",
+            "geometry": json.loads(q.boundary.geojson),
+            "properties": {
+                "name": q.name,
+                "rank": q.rank,
+            }
+        })
+
+    return JsonResponse({
+        "type": "FeatureCollection",
+        "features": features
+    })
+
+
 
 
 # API endpoint: /api/cafes_within_radius/?lat=...&lng=...&radius=...
 @api_view(['GET'])
 def cafes_within_radius(request):
-    """returns cafes within the radius given mby user of a point given by user"""
-    try:
-        lat = float(request.GET.get('lat'))
-        lng = float(request.GET.get('lng'))
-        radius = float(request.GET.get('radius', 1000))
-    except (TypeError, ValueError):
-        return Response({"error": "Provide numeric lat, lng and radius"}, status=400)
+    lat = float(request.GET.get("lat"))
+    lng = float(request.GET.get("lng"))
+    radius = float(request.GET.get("radius", 500))  # metres
 
-    user_point = Point(lng, lat, srid=4326)
-    qs = Cafe.objects.filter(location__distance_lte=(user_point, D(m=radius)))
-    serializer = CafeSerializer(qs, many=True)
-    return Response(serializer.data)
+    user_location = Point(lng, lat, srid=4326)
 
-class CafeOSMViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = CafeOSM.objects.all()
-    serializer_class = CafeOSMSerializer
+    cafes = CafeOSM.objects.filter(
+        geometry__distance_lte=(user_location, D(m=radius))
+    )
+
+    serializer = CafeOSMSerializer(cafes, many=True)
+    return JsonResponse(serializer.data, safe=False)
