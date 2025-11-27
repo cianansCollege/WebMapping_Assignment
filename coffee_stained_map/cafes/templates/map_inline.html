@@ -305,7 +305,7 @@
 
     // load all cafes on map start
     window.addEventListener("load", () => {
-      fetch("/api/cafes/")
+      fetch("/api/cafes_osm/")
         .then(res => res.json())
         .then(data => {
           if (typeof data === "string") { try { data = JSON.parse(data); } catch { return; } }
