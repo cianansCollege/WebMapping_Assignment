@@ -10,6 +10,8 @@ from .serializers import CafeSerializer
 from django.shortcuts import render
 from json import loads
 from django.contrib.gis.measure import D
+from .models import CafeOSM
+from .serializers import CafeOSMSerializer
 
 
 #read-only end point to get all cafes as GeoJSON using the serializer
@@ -98,3 +100,7 @@ def cafes_within_radius(request):
     qs = Cafe.objects.filter(location__distance_lte=(user_point, D(m=radius)))
     serializer = CafeSerializer(qs, many=True)
     return Response(serializer.data)
+
+class CafeOSMViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = CafeOSM.objects.all()
+    serializer_class = CafeOSMSerializer

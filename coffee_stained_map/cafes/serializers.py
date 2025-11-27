@@ -1,6 +1,7 @@
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from rest_framework import serializers
 from .models import Cafe
+from .models import CafeOSM
 
 #the serializer converts the cafe model into GeoJSON for the map display
 class CafeSerializer(GeoFeatureModelSerializer):
@@ -23,3 +24,10 @@ class CafeSerializer(GeoFeatureModelSerializer):
                 return f"{round(meters)}m"
         return None
 
+
+class CafeOSMSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = CafeOSM
+        geo_field = 'geometry'
+        fields = ('ogc_fid', 'osm_id', 'name', 'amenity',
+                  'addr_city', 'addr_street', 'addr_postcode')

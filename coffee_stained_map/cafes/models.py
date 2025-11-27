@@ -36,3 +36,16 @@ class Quarter(models.Model):
             Index(fields=["boundary"], name="quarter_boundary_gist", opclasses=["gist"])
         ]
     
+
+class CafeOSM(models.Model):
+    ogc_fid = models.AutoField(primary_key=True)
+    osm_id = models.CharField(max_length=100, null=True, blank=True)
+    name = models.CharField(max_length=200, null=True, blank=True)
+    amenity = models.CharField(max_length=100, null=True, blank=True)
+    addr_city = models.CharField(max_length=100, null=True, blank=True)
+    addr_street = models.CharField(max_length=200, null=True, blank=True)
+    addr_postcode = models.CharField(max_length=20, null=True, blank=True)
+    geometry = models.PointField(srid=4326, db_column='wkb_geometry')
+
+    class Meta:
+        db_table = 'cafes_osm'
