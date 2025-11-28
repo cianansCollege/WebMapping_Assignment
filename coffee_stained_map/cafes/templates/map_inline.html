@@ -68,6 +68,18 @@
             <button class="btn btn-outline-dark w-100" id="toggle-counties-button">Hide Counties</button>
           </div>
 
+          <!-- zoom buttons -->
+          <div id="toggle-zoom">
+            <button class="btn btn-outline-dark w-100" id="toggle-zoom-in-button">Zoom In</button>
+            <button class="btn btn-outline-dark w-100" id="toggle-zoom-out-button">Zoom Out</button>
+          </div>
+
+          <!-- get coordinates -->
+          <div id="get-coordinates">
+            <button class="btn btn-outline-dark w-100" id="get-coordinates-button">Get Coordinates</button>
+            <!-- add popo up saying to click anywhere -->
+          </div>
+
           <!-- find closest cafes -->
           <div id="closest-tool">
             <h6>Find Closest Cafés</h6>
@@ -101,6 +113,9 @@
       <div class="col-md-9">
         <div id="map"></div>
       </div>
+
+      <div id="status">..</div>
+      <div id="coords-display">..</div>
     </div>
   </div>
 
@@ -116,7 +131,7 @@
     // setup map
     const map = L.map("map").setView([53.34731, -6.258946], 11);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
+      maxZoom: 20,
       attribution: "&copy; OpenStreetMap contributors",
     }).addTo(map);
 
@@ -237,7 +252,7 @@
             .bindPopup("search location")
             .openPopup();
 
-          map.setView([lat, lng], 14);
+          map.setView([lat, lng], 20);
 
           // update sidebar list
           const listDiv = document.getElementById("cafe-list");
@@ -354,6 +369,46 @@
       }
       countiesVisible = !countiesVisible;
     });
+
+    // //zoom buttons
+    // document.getElementById("toggle-zoom-in-button").addEventListener("click", () => {
+    //   const center = map.getCenter();
+    //   console.log("Latitude:", center.lat);
+    //   console.log("Longitude:", center.lng);
+    //   map.setView([center.lat, center.lng], 17);
+    // });
+
+    // document.getElementById("toggle-zoom-out-button").addEventListener("click", () => {
+    //   const center = map.getCenter();
+    //   console.log("Latitude:", center.lat);
+    //   console.log("Longitude:", center.lng);
+    //   map.setView([center.lat, center.lng], 8);
+    // });
+
+    document.getElementById("toggle-zoom-in-button").addEventListener("click", () => {
+      map.setZoom(map.getZoom() + 1);
+    });
+    document.getElementById("toggle-zoom-out-button").addEventListener("click", () => {
+      map.setZoom(map.getZoom() - 1);
+    });
+
+
+    document.getElementById("get-coordinates-button").addEventListener("click", () => {
+        document.getElementById("status").textContent = "Click on the map to select coordinates.";
+
+        function onMapClick(e) {
+            const { lat, lng } = e.latlng;
+            document.getElementById("coords-display").textContent =
+                `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
+
+            map.off("click", onMapClick);
+            document.getElementById("status").textContent = "Coordinate selected.";
+        }
+
+        map.on("click", onMapClick);
+    });
+
+    
   </script>
 </body>
 </html>
