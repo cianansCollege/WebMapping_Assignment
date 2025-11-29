@@ -26,8 +26,8 @@ document.addEventListener("DOMContentLoaded", () => {
         onEachFeature: (feature, layer) => {
           const props = feature.properties;
           layer.bindPopup(`
-            <b>${props.english_name}, ${props.province}</b><br>
             <i>${props.gaeilge_name}</i><br>
+            <b>${props.english_name}, ${props.province}</b><br>
           `);
         }
       }).addTo(countiesLayer);
@@ -259,23 +259,52 @@ document.addEventListener("DOMContentLoaded", () => {
     map.setZoom(map.getZoom() - 1);
   });
 
-  /* ---------------------------------------------
-    GET COORDINATES (NEXT CLICK)
-  ---------------------------------------------- */
-  document.getElementById("get-coordinates-button").addEventListener("click", () => {
-    document.getElementById("status").textContent =
-      "Click on the map to select coordinates.";
+    /* ---------------------------------------------
+    GET COORDINATES (NEXT CLICK) — FINAL WORKING VERSION
+    ---------------------------------------------- */
 
-    function onMapClick(e) {
-      const { lat, lng } = e.latlng;
+    document.getElementById("get-coordinates-button").addEventListener("click", () => {
+        console.log("➡️ Get Coordinates button clicked");
 
-      document.getElementById("coords-display").textContent =
-        `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
+        document.getElementById("status").textContent =
+        "Click anywhere on the map to select coordinates.";
 
-      map.off("click", onMapClick);
-      document.getElementById("status").textContent = "Coordinate selected.";
-    }
+        // FULLY disable county polygons so they do not block clicks
+        console.log("➡️ Disabling county layer interactivity (pointer-events: none)");
+        countiesLayer.eachLayer(layer => {
+            if (layer._path) {
+                layer._path.style.pointerEvents = "none";   // <-- key fix
+                console.log("   - Disabled:", layer.feature?.properties?.english_name);
+            }
+        });
 
-    map.on("click", onMapClick);
-  });
+        function onMapClick(e) {
+            console.log("🟢 Map click detected!", e);
+
+            const { lat, lng } = e.latlng;
+
+            document.getElementById("coords-display").textContent =
+            `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
+            console.log(`🟢 Coordinates selected: ${lat}, ${lng}`);
+
+            // Remove listener
+            map.off("click", onMapClick);
+
+            // Restore pointer events
+            console.log("➡️ Restoring county interaction...");
+            countiesLayer.eachLayer(layer => {
+                if (layer._path) {
+                    layer._path.style.pointerEvents = "auto";
+                    console.log("   - Restored:", layer.feature?.properties?.english_name);
+                }
+            });
+
+            document.getElementById("status").textContent = "Coordinate selected.";
+        }
+
+        console.log("➡️ Adding click listener to map");
+        map.on("click", onMapClick);
+    });
+
+
 });
