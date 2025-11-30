@@ -1,3 +1,4 @@
+console.log("🔥 main.js loaded");
 document.addEventListener("DOMContentLoaded", () => {
   /* ---------------------------------------------
     MAP SETUP
@@ -11,6 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let markersLayer = L.markerClusterGroup().addTo(map);
   let countiesLayer = L.layerGroup().addTo(map);
+  window.map = map;
+  window.countiesLayer = countiesLayer;
   let radiusCircle = null;
 
   /* ---------------------------------------------
@@ -260,7 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
     /* ---------------------------------------------
-    GET COORDINATES (NEXT CLICK) — FINAL WORKING VERSION
+    GET COORDINATES — REMOVE LAYER TEMPORARILY
     ---------------------------------------------- */
 
     document.getElementById("get-coordinates-button").addEventListener("click", () => {
@@ -269,14 +272,11 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("status").textContent =
         "Click anywhere on the map to select coordinates.";
 
-        // FULLY disable county polygons so they do not block clicks
-        console.log("➡️ Disabling county layer interactivity (pointer-events: none)");
-        countiesLayer.eachLayer(layer => {
-            if (layer._path) {
-                layer._path.style.pointerEvents = "none";   // <-- key fix
-                console.log("   - Disabled:", layer.feature?.properties?.english_name);
-            }
-        });
+        // REMOVE the counties layer from the map
+        if (map.hasLayer(countiesLayer)) {
+            console.log("➡️ Removing counties layer temporarily");
+            map.removeLayer(countiesLayer);
+        }
 
         function onMapClick(e) {
             console.log("🟢 Map click detected!", e);
@@ -287,17 +287,13 @@ document.addEventListener("DOMContentLoaded", () => {
             `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
             console.log(`🟢 Coordinates selected: ${lat}, ${lng}`);
 
-            // Remove listener
+            // Stop listening for additional clicks
+            console.log("➡️ Removing click listener");
             map.off("click", onMapClick);
 
-            // Restore pointer events
-            console.log("➡️ Restoring county interaction...");
-            countiesLayer.eachLayer(layer => {
-                if (layer._path) {
-                    layer._path.style.pointerEvents = "auto";
-                    console.log("   - Restored:", layer.feature?.properties?.english_name);
-                }
-            });
+            // RESTORE the counties layer
+            console.log("➡️ Restoring counties layer");
+            map.addLayer(countiesLayer);
 
             document.getElementById("status").textContent = "Coordinate selected.";
         }
@@ -305,6 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("➡️ Adding click listener to map");
         map.on("click", onMapClick);
     });
+
 
 
 });
