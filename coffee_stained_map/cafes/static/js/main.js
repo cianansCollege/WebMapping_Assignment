@@ -39,8 +39,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const select = document.getElementById("county-select");
       geojson.features.forEach(f => {
         const opt = document.createElement("option");
-        opt.value = f.properties.english_name;
-        opt.textContent = f.properties.english_name;
+        opt.value = f.properties.english;
+        opt.textContent = f.properties.english;
         select.appendChild(opt);
       });
     })

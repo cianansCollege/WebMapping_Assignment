@@ -87,14 +87,32 @@ def counties(request):
 
     features = []
     for c in counties:
+
+        # English name resolution
+        english = (
+            safe_title(c.english) or
+            safe_title(c.countyname) or
+            safe_title(c.county) or
+            "Unknown County"
+        )
+
+        # Irish/Gaeilge name resolution
+        gaeilge = (
+            safe_title(c.gaeilge) or
+            safe_title(c.contae) or
+            "Gan Ainm"
+        )
+
+        # Province fallback
+        province = safe_title(c.province) or "Ulster"
+
         features.append({
             "type": "Feature",
-            "geometry": json.loads(c.geometry.geojson),
+            "geometry": json.loads(c.wkb_geometry.geojson),
             "properties": {
-                "english_name": safe_title(c.english),
-                "gaeilge_name": safe_title(c.gaeilge),
-                "province": safe_title(c.province),
-                "county": safe_title(c.county),
+                "english_name": english,
+                "gaeilge_name": gaeilge,
+                "province": province,
             }
         })
 
@@ -102,6 +120,7 @@ def counties(request):
         "type": "FeatureCollection",
         "features": features
     })
+
 
 
 @api_view(['GET'])
