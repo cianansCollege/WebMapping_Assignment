@@ -16,7 +16,7 @@ import json
 
 #renders the map
 def cafe_map(request):
-    return render(request, "map_inline.html")
+    return render(request, "map.html")
 
 class CafeOSMViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = CafeOSM.objects.all()

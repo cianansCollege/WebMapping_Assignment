@@ -267,38 +267,38 @@ document.addEventListener("DOMContentLoaded", () => {
     ---------------------------------------------- */
 
     document.getElementById("get-coordinates-button").addEventListener("click", () => {
-        console.log("➡️ Get Coordinates button clicked");
+        console.log("Get Coordinates button clicked");
 
         document.getElementById("status").textContent =
         "Click anywhere on the map to select coordinates.";
 
         // REMOVE the counties layer from the map
         if (map.hasLayer(countiesLayer)) {
-            console.log("➡️ Removing counties layer temporarily");
+            console.log("Removing counties layer temporarily");
             map.removeLayer(countiesLayer);
         }
 
         function onMapClick(e) {
-            console.log("🟢 Map click detected!", e);
+            console.log("Map click detected!", e);
 
             const { lat, lng } = e.latlng;
 
             document.getElementById("coords-display").textContent =
             `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
-            console.log(`🟢 Coordinates selected: ${lat}, ${lng}`);
+            console.log(`Coordinates selected: ${lat}, ${lng}`);
 
             // Stop listening for additional clicks
-            console.log("➡️ Removing click listener");
+            console.log("Removing click listener");
             map.off("click", onMapClick);
 
             // RESTORE the counties layer
-            console.log("➡️ Restoring counties layer");
+            console.log("Restoring counties layer");
             map.addLayer(countiesLayer);
 
             document.getElementById("status").textContent = "Coordinate selected.";
         }
 
-        console.log("➡️ Adding click listener to map");
+        console.log("Adding click listener to map");
         map.on("click", onMapClick);
     });
 
