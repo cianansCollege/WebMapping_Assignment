@@ -1,12 +1,13 @@
+# FILE: views.py
 from django.shortcuts import render
 from django.http import JsonResponse
 
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
+from django.db.models import Q
 
 from rest_framework.decorators import api_view
-from rest_framework import viewsets
 
 from .models import CafeOSM, County
 from .serializers import CafeOSMSerializer
@@ -14,23 +15,81 @@ from .serializers import CafeOSMSerializer
 import json
 
 
-#renders the map
+# FRONTEND MAP PAGE
 def cafe_map(request):
     return render(request, "map.html")
 
-class CafeOSMViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = CafeOSM.objects.all()
-    serializer_class = CafeOSMSerializer
+
+# ---------------------------------------------
+# HELPER — Convert queryset to FeatureCollection
+# ---------------------------------------------
+def cafes_to_featurecollection(cafes):
+    """
+    Convert a queryset of CafeOSM objects into a GeoJSON FeatureCollection
+    using CafeOSMSerializer.
+    """
+    serializer = CafeOSMSerializer(cafes, many=True)
+    features = serializer.data  # DRF GIS returns a list of Feature objects
+
+    return {
+        "type": "FeatureCollection",
+        "features": features
+    }
 
 
-def safe_title(value):
-    if isinstance(value, str):
-        value = value.strip()
-        return value.title() if value else None
-    return None
+# ---------------------------------------------
+# API — Load ALL cafés (GeoJSON)
+# ---------------------------------------------
+@api_view(['GET'])
+def cafes_osm(request):
+    cafes = CafeOSM.objects.all()
+    return JsonResponse(cafes_to_featurecollection(cafes))
 
 
-## API endpoint: /api/cafes_near/?lat=...&lng=...
+# ---------------------------------------------
+# API — Cafés within radius
+# /api/cafes_within_radius/?lat=..&lng=..&radius=..
+# ---------------------------------------------
+@api_view(['GET'])
+def cafes_within_radius(request):
+    lat = float(request.GET.get("lat"))
+    lng = float(request.GET.get("lng"))
+    radius = float(request.GET.get("radius", 500))
+
+    pt = Point(lng, lat, srid=4326)
+
+    cafes = CafeOSM.objects.filter(
+        geometry__distance_lte=(pt, D(m=radius))
+    )
+
+    return JsonResponse(cafes_to_featurecollection(cafes))
+
+
+# ---------------------------------------------
+# API — Closest cafés
+# /api/closest_cafes/?lat=..&lng=..&limit=5
+# ---------------------------------------------
+@api_view(['GET'])
+def cafes_closest(request):
+    lat = float(request.GET.get("lat"))
+    lng = float(request.GET.get("lng"))
+    limit = int(request.GET.get("limit", 5))
+
+    pt = Point(lng, lat, srid=4326)
+
+    cafes = (
+        CafeOSM.objects
+        .annotate(distance=Distance("geometry", pt))
+        .order_by("distance")[:limit]
+    )
+
+    return JsonResponse(cafes_to_featurecollection(cafes))
+
+
+# ---------------------------------------------
+# API — Cafés near a point (same as radius)
+# /api/cafes_near/?lat=..&lng=..&radius=..
+# ---------------------------------------------
 @api_view(['GET'])
 def cafes_near(request):
     lat = float(request.GET.get("lat"))
@@ -43,44 +102,13 @@ def cafes_near(request):
         geometry__distance_lte=(pt, D(m=radius))
     )
 
-    serializer = CafeOSMSerializer(cafes, many=True)
-    return JsonResponse(serializer.data, safe=False)
+    return JsonResponse(cafes_to_featurecollection(cafes))
 
 
-## API endpoint: /api/closest_cafes/?lat=...&lng=...
-@api_view(['GET'])
-def cafes_closest(request):
-    lat = float(request.GET.get("lat"))
-    lng = float(request.GET.get("lng"))
-    limit = int(request.GET.get("limit", 5))
-
-    user_location = Point(lng, lat, srid=4326)
-
-    cafes = (
-        CafeOSM.objects
-        .annotate(distance=Distance("geometry", user_location))
-        .order_by("distance")[:limit]
-    )
-
-    serializer = CafeOSMSerializer(cafes, many=True)
-    return JsonResponse(serializer.data, safe=False)
-
-# API endpoint: /api/cafes_within_radius/?lat=...&lng=...&radius=...
-@api_view(['GET'])
-def cafes_within_radius(request):
-    lat = float(request.GET.get("lat"))
-    lng = float(request.GET.get("lng"))
-    radius = float(request.GET.get("radius", 500))  # metres
-
-    user_location = Point(lng, lat, srid=4326)
-
-    cafes = CafeOSM.objects.filter(
-        geometry__distance_lte=(user_location, D(m=radius))
-    )
-
-    serializer = CafeOSMSerializer(cafes, many=True)
-    return JsonResponse(serializer.data, safe=False)
-
+# ---------------------------------------------
+# API — County polygons (GeoJSON)
+# /api/counties/
+# ---------------------------------------------
 @api_view(['GET'])
 def counties(request):
     counties = County.objects.all()
@@ -88,24 +116,25 @@ def counties(request):
     features = []
     for c in counties:
 
-        # English name resolution
+        # Resolve English name fallback
         english = (
-            safe_title(c.english) or
-            safe_title(c.countyname) or
-            safe_title(c.county) or
+            (c.english and c.english.strip()) or
+            (c.countyname and c.countyname.strip()) or
+            (c.county and c.county.strip()) or
             "Unknown County"
-        )
+        ).title()
 
-        # Irish/Gaeilge name resolution
+        # Resolve Gaeilge name fallback
         gaeilge = (
-            safe_title(c.gaeilge) or
-            safe_title(c.contae) or
+            (c.gaeilge and c.gaeilge.strip()) or
+            (c.contae and c.contae.strip()) or
             "Gan Ainm"
-        )
+        ).title()
 
         # Province fallback
-        province = safe_title(c.province) or "Ulster"
+        province = (c.province or "Unknown").title()
 
+        # Build GeoJSON feature
         features.append({
             "type": "Feature",
             "geometry": json.loads(c.wkb_geometry.geojson),
@@ -122,19 +151,26 @@ def counties(request):
     })
 
 
-
+# ---------------------------------------------
+# API — Cafés inside a specific county
+# /api/cafes_in_county/Dublin/
+# ---------------------------------------------
 @api_view(['GET'])
 def cafes_in_county(request, county_name):
-    try:
-        county = County.objects.get(english__iexact=county_name)
-    except County.DoesNotExist:
-        return JsonResponse({"error": "County not found"}, status=404)
+
+    county = County.objects.filter(
+        Q(english__iexact=county_name) |
+        Q(countyname__iexact=county_name) |
+        Q(county__iexact=county_name) |
+        Q(contae__iexact=county_name) |
+        Q(gaeilge__iexact=county_name)
+    ).first()
+
+    if county is None:
+        return JsonResponse({"error": f"County '{county_name}' not found"}, status=404)
 
     cafes = CafeOSM.objects.filter(
-        geometry__within=county.geometry
+        geometry__within=county.wkb_geometry
     )
 
-    serializer = CafeOSMSerializer(cafes, many=True)
-    return JsonResponse(serializer.data, safe=False)
-
-# add cafes within county and filter by county later
+    return JsonResponse(cafes_to_featurecollection(cafes))
