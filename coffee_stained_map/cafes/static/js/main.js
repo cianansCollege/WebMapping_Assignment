@@ -1,20 +1,8 @@
 console.log("🔥 main.js loaded");
-
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("🟢 DOM START");
-
-  try {
-      console.log("Button inside DOM:", document.getElementById("locate-btn"));
-  } catch (e) {
-      console.error("🔥 Error checking button:", e);
-  }
-
-  console.log("🟢 DOM END");
-
   /* ---------------------------------------------
-      MAP SETUP
+    MAP SETUP
   ---------------------------------------------- */
-
   const map = L.map("map").setView([53.34731, -6.258946], 11);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -24,32 +12,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let markersLayer = L.markerClusterGroup().addTo(map);
   let countiesLayer = L.layerGroup().addTo(map);
-  let radiusCircle = null;
-  let searchMarker = null;
-
-  // Global storage for user location
-  window.userLocation = { lat: null, lng: null };
-
   window.map = map;
   window.countiesLayer = countiesLayer;
-
+  let radiusCircle = null;
 
   /* ---------------------------------------------
-      LOAD COUNTY POLYGONS
+    LOAD COUNTY POLYGONS
   ---------------------------------------------- */
-
   fetch("/api/counties/")
     .then(res => res.json())
     .then(geojson => {
 
       // Draw counties
-      const countiesGeoLayer = L.geoJSON(geojson, {
+      L.geoJSON(geojson, {
         style: { color: "#ff8800", weight: 1, fillOpacity: 0 },
         onEachFeature: (feature, layer) => {
-          const p = feature.properties;
+          const props = feature.properties;
           layer.bindPopup(`
-            <i>${p.gaeilge_name}</i><br>
-            <b>${p.english_name}, ${p.province}</b>
+            <i>${props.gaeilge_name}</i><br>
+            <b>${props.english_name}, ${props.province}</b><br>
           `);
         }
       }).addTo(countiesLayer);
@@ -62,18 +43,12 @@ document.addEventListener("DOMContentLoaded", () => {
         opt.textContent = f.properties.english;
         select.appendChild(opt);
       });
-
-      // Save this for zoom-to-county
-      window.countiesGeoLayer = countiesGeoLayer;
-
     })
     .catch(err => console.error("Error loading counties:", err));
 
-
   /* ---------------------------------------------
-      HELPER: ADD CAFÉS TO MAP
+    HELPER: ADD CAFÉS TO MAP
   ---------------------------------------------- */
-
   function addCafes(data) {
     markersLayer.clearLayers();
 
@@ -98,11 +73,9 @@ document.addEventListener("DOMContentLoaded", () => {
     markersLayer.addLayer(geoLayer);
   }
 
-
   /* ---------------------------------------------
-      FILTER: BY COUNTY + ZOOM TO COUNTY
+    FILTER: BY COUNTY
   ---------------------------------------------- */
-
   document.getElementById("county-select").addEventListener("change", async function () {
     const countyName = this.value;
 
@@ -118,27 +91,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
       addCafes(data);
 
-      // ZOOM TO COUNTY FIX
-      countiesLayer.eachLayer(layer => {
-        if (layer.feature.properties.english_name === countyName) {
-          map.fitBounds(layer.getBounds());
-        }
-      });
-
       if (!data.features?.length) {
         alert("No cafés found in this county.");
       }
-
     } catch (err) {
       console.error("Error loading county cafés:", err);
     }
   });
 
-
   /* ---------------------------------------------
-      FIND CLOSEST CAFÉS
+    FIND CLOSEST CAFÉS
   ---------------------------------------------- */
-
   document.getElementById("closest_cafes_button").addEventListener("click", () => {
     const lat = parseFloat(document.getElementById("latInput").value);
     const lng = parseFloat(document.getElementById("lngInput").value);
@@ -152,12 +115,15 @@ document.addEventListener("DOMContentLoaded", () => {
       .then(res => res.json())
       .then(fc => {
 
+        // Fix if API returns string JSON
+        if (typeof fc === "string") {
+          try { fc = JSON.parse(fc); } catch { return; }
+        }
+
         addCafes(fc);
 
-        // Remove previous search marker FIX
-        if (searchMarker) map.removeLayer(searchMarker);
-
-        searchMarker = L.marker([lat, lng], {
+        // Mark search point
+        L.marker([lat, lng], {
           icon: L.icon({
             iconUrl: "https://cdn-icons-png.flaticon.com/512/64/64113.png",
             iconSize: [25, 25],
@@ -173,29 +139,28 @@ document.addEventListener("DOMContentLoaded", () => {
         const list = document.getElementById("cafe-list");
         list.innerHTML = "<h6 class='fw-semibold mt-3'>Closest Cafés:</h6>";
 
-        fc.features?.forEach(f => {
-          const p = f.properties;
-          list.innerHTML += `
-            <div class="border-bottom pb-2 mb-2">
-              <b>${p.name ?? "Unnamed Café"}</b><br>
-              ${p.address ?? "No address"}<br>
-              ⭐ ${p.rating ?? "N/A"}
-              ${p.distance ? `<br>📍 ${p.distance} away` : ""}
-            </div>`;
-        });
-
+        if (Array.isArray(fc.features)) {
+          fc.features.forEach(f => {
+            const p = f.properties;
+            list.innerHTML += `
+              <div class="border-bottom pb-2 mb-2">
+                <b>${p.name ?? "Unnamed Café"}</b><br>
+                ${p.address ?? "No address"}<br>
+                ⭐ ${p.rating ?? "N/A"}
+                ${p.distance ? `<br>📍 ${p.distance} away` : ""}
+              </div>`;
+          });
+        } else {
+          list.innerHTML += "<p>No cafés found.</p>";
+        }
       })
       .catch(err => console.error("Error loading closest cafés:", err));
   });
 
-
-
   /* ---------------------------------------------
-      CAFÉS WITHIN RADIUS
+    CAFÉS WITHIN RADIUS
   ---------------------------------------------- */
-
   document.getElementById("cafes_within_radius_button").addEventListener("click", async () => {
-
     const lat = parseFloat(document.getElementById("latRadius").value);
     const lng = parseFloat(document.getElementById("lngRadius").value);
     const radius = parseFloat(document.getElementById("radiusInput").value);
@@ -205,14 +170,18 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Remove old radius circle properly (FIXED)
-    if (radiusCircle) map.removeLayer(radiusCircle);
+    // Remove previous circle
+    map.eachLayer(layer => {
+      if (layer instanceof L.Circle && layer.options.color === "blue") {
+        map.removeLayer(layer);
+      }
+    });
 
+    // Draw new circle
     radiusCircle = L.circle([lat, lng], {
       radius,
       color: "blue",
       fillOpacity: 0.1,
-      className: "radius-circle"
     }).addTo(map)
       .bindPopup(`Search area: ${radius} m`)
       .openPopup();
@@ -221,25 +190,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const res = await fetch(`/api/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`);
-      const data = await res.json();
-
-      addCafes(data);
+      let data = await res.json();
+      if (typeof data === "string") data = JSON.parse(data);
 
       const list = document.getElementById("radius-list");
       list.innerHTML = "<h6 class='fw-semibold mt-3'>Cafés Within Radius:</h6>";
 
-      if (data.features?.length) {
-        data.features.forEach(f => {
-          const p = f.properties;
-          list.innerHTML += `
-            <div class="border-bottom pb-2 mb-2">
-              <b>${p.name ?? "Unnamed Café"}</b><br>
-              ${p.address ?? "No address"}<br>
-              ⭐ ${p.rating ?? "N/A"}
-            </div>`;
-        });
+      if (data.type === "FeatureCollection" && Array.isArray(data.features)) {
+        addCafes(data);
+
+        if (data.features.length) {
+          data.features.forEach(f => {
+            const p = f.properties;
+            list.innerHTML += `
+              <div class="border-bottom pb-2 mb-2">
+                <b>${p.name ?? "Unnamed Café"}</b><br>
+                ${p.address ?? "No address"}<br>
+                ⭐ ${p.rating ?? "N/A"}
+              </div>`;
+          });
+        } else {
+          list.innerHTML += "<p>No cafés found within this radius.</p>";
+        }
       } else {
-        list.innerHTML += "<p>No cafés found within this radius.</p>";
+        list.innerHTML = "<p>Error loading cafés.</p>";
       }
 
     } catch (err) {
@@ -247,25 +221,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-
-
   /* ---------------------------------------------
-      LOAD ALL CAFÉS ON START
+    LOAD ALL CAFÉS ON START
   ---------------------------------------------- */
-
   window.addEventListener("load", () => {
     fetch("/api/cafes_osm/")
       .then(res => res.json())
-      .then(addCafes)
+      .then(data => {
+        if (typeof data === "string") {
+          try { data = JSON.parse(data); } catch { return; }
+        }
+        addCafes(data);
+      })
       .catch(err => console.error("Error loading initial cafés:", err));
   });
 
-
-
   /* ---------------------------------------------
-      TOGGLE COUNTY LAYER
+    TOGGLE COUNTY LAYER
   ---------------------------------------------- */
-
   let countiesVisible = true;
   document.getElementById("toggle-counties-button").addEventListener("click", () => {
     countiesVisible
@@ -278,12 +251,9 @@ document.addEventListener("DOMContentLoaded", () => {
       countiesVisible ? "Hide Counties" : "Show Counties";
   });
 
-
-
   /* ---------------------------------------------
-      ZOOM BUTTONS
+    ZOOM BUTTONS
   ---------------------------------------------- */
-
   document.getElementById("toggle-zoom-in-button").addEventListener("click", () => {
     map.setZoom(map.getZoom() + 1);
   });
@@ -292,86 +262,46 @@ document.addEventListener("DOMContentLoaded", () => {
     map.setZoom(map.getZoom() - 1);
   });
 
+    /* ---------------------------------------------
+    GET COORDINATES — REMOVE LAYER TEMPORARILY
+    ---------------------------------------------- */
+
+    document.getElementById("get-coordinates-button").addEventListener("click", () => {
+        console.log("Get Coordinates button clicked");
+
+        document.getElementById("status").textContent =
+        "Click anywhere on the map to select coordinates.";
+
+        // REMOVE the counties layer from the map
+        if (map.hasLayer(countiesLayer)) {
+            console.log("Removing counties layer temporarily");
+            map.removeLayer(countiesLayer);
+        }
+
+        function onMapClick(e) {
+            console.log("Map click detected!", e);
+
+            const { lat, lng } = e.latlng;
+
+            document.getElementById("coords-display").textContent =
+            `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
+            console.log(`Coordinates selected: ${lat}, ${lng}`);
+
+            // Stop listening for additional clicks
+            console.log("Removing click listener");
+            map.off("click", onMapClick);
+
+            // RESTORE the counties layer
+            console.log("Restoring counties layer");
+            map.addLayer(countiesLayer);
+
+            document.getElementById("status").textContent = "Coordinate selected.";
+        }
+
+        console.log("Adding click listener to map");
+        map.on("click", onMapClick);
+    });
 
 
-  /* ---------------------------------------------
-      GET COORDINATES
-  ---------------------------------------------- */
-
-  document.getElementById("get-coordinates-button").addEventListener("click", () => {
-
-    document.getElementById("status").textContent =
-      "Click anywhere on the map to select coordinates.";
-
-    // Hide counties temporarily
-    if (map.hasLayer(countiesLayer)) map.removeLayer(countiesLayer);
-
-    function onMapClick(e) {
-
-      // Restore counties immediately (FIX)
-      map.addLayer(countiesLayer);
-
-      const { lat, lng } = e.latlng;
-      document.getElementById("coords-display").textContent =
-        `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
-
-      map.off("click", onMapClick);
-      document.getElementById("status").textContent = "Coordinate selected.";
-    }
-
-    map.on("click", onMapClick);
-  });
-
-
-
-  /* ---------------------------------------------
-      FIND MY LOCATION
-  ---------------------------------------------- */
-
-  document.getElementById("locate-btn").addEventListener("click", function () {
-    alert("clicked");
-    console.log("locate-btn clicked")
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      successLocation,
-      errorLocation,
-      { enableHighAccuracy: true }
-    );
-  });
-
-  let userMarker = null;
-  let accuracyCircleUser = null;
-
-  function successLocation(position) {
-    const lat = position.coords.latitude;
-    const lng = position.coords.longitude;
-    const accuracy = position.coords.accuracy;
-
-    window.userLocation = { lat, lng }; // save globally
-
-    if (userMarker) map.removeLayer(userMarker);
-    if (accuracyCircleUser) map.removeLayer(accuracyCircleUser);
-
-    userMarker = L.marker([lat, lng]).addTo(map)
-      .bindPopup("You are here")
-      .openPopup();
-
-    accuracyCircleUser = L.circle([lat, lng], {
-      radius: accuracy,
-      color: "#136AEC",
-      fillColor: "#136AEC",
-      fillOpacity: 0.2
-    }).addTo(map);
-
-    map.setView([lat, lng], 16);
-  }
-
-  function errorLocation() {
-    alert("Could not retrieve location. Check your permissions.");
-  }
 
 });
