@@ -1,7 +1,5 @@
-from django.db import models
 from django.contrib.gis.db import models
 from django.db.models import Index
-from django.contrib.gis.db import models
 
 class CafeOSM(models.Model):
     ogc_fid = models.AutoField(primary_key=True)
