@@ -21,7 +21,7 @@ class CafeOSM(models.Model):
 class County(models.Model):
     ogc_fid = models.IntegerField(primary_key=True, db_column="ogc_fid")
 
-    wkb_geometry = models.MultiPolygonField(srid=4326, db_column="wkb_geometry")
+    geometry = models.MultiPolygonField(srid=4326, db_column="geometry")
 
     co_id = models.CharField(max_length=20, null=True, db_column="co_id")
     countyname = models.CharField(max_length=200, null=True, db_column="countyname")

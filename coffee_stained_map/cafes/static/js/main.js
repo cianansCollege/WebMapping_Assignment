@@ -38,9 +38,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // Populate dropdown
       const select = document.getElementById("county-select");
       geojson.features.forEach(f => {
+        console.log("populating dropdown");
         const opt = document.createElement("option");
-        opt.value = f.properties.english;
-        opt.textContent = f.properties.english;
+        opt.value = f.properties.english_name;
+        opt.textContent = f.properties.english_name;
         select.appendChild(opt);
       });
     })

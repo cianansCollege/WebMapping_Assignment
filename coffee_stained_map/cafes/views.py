@@ -108,7 +108,7 @@ def counties(request):
 
         features.append({
             "type": "Feature",
-            "geometry": json.loads(c.wkb_geometry.geojson),
+            "geometry": json.loads(c.geometry.geojson),
             "properties": {
                 "english_name": english,
                 "gaeilge_name": gaeilge,

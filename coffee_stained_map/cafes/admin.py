@@ -13,7 +13,7 @@ class CountyAdmin(GISModelAdmin):
     list_display = ("english", "gaeilge", "province")
     readonly_fields = (
         "ogc_fid",
-        "wkb_geometry",
+        "geometry",
         "co_id",
         "countyname",
         "english",
