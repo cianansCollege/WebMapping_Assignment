@@ -20,113 +20,129 @@
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
 
   <!-- favicon -->
-   <link rel="icon" type="image/x-icon" href="{% static 'favicon.png' %}">
+  <link rel="icon" type="image/x-icon" href="{% static 'favicon.png' %}">
 </head>
 
 <body>
 
   <div class="container py-3">
-    <div class="text-center mb-3">
-      <h1>☕ Coffee Stained Map</h1>
+
+    <div class="text-center mb-4">
+      <h1 class="fw-bold">☕ Coffee Stained Map</h1>
+      <p class="text-muted small">Explore cafés across Ireland using location-based tools</p>
     </div>
 
     <div class="row g-3">
 
-      <!-- Sidebar -->
+      <!-- SIDEBAR -->
       <div class="col-md-3">
         <div class="card shadow-sm p-3">
-          <h5 class="text-center mb-3">Filters & Tools</h5>
 
-          <!-- County filter -->
-          <label for="county-select">Filter by County:</label>
-          <select id="county-select" class="form-select">
-            <option value="">-- select county --</option>
-          </select>
+          <h5 class="text-center mb-3">Tools</h5>
 
-          <!-- Toggle counties -->
-          <div class="tool-box">
-            <button class="btn btn-outline-dark w-100" id="toggle-counties-button">
+          <!-- ========================= -->
+          <!-- COUNTY FILTER             -->
+          <!-- ========================= -->
+          <div class="mb-4">
+            <h6 class="fw-semibold">Filter by County</h6>
+            <select id="county-select" class="form-select">
+              <option value="">-- select county --</option>
+            </select>
+          </div>
+
+          <!-- ========================= -->
+          <!-- MAP LAYERS                -->
+          <!-- ========================= -->
+          <div class="mb-4">
+            <h6 class="fw-semibold">Map Layers</h6>
+
+            <button id="toggle-counties-button" class="btn btn-outline-dark w-100 mb-2">
               Hide Counties
             </button>
+
+            <div class="d-flex gap-2">
+              <button id="toggle-zoom-in-button" class="btn btn-outline-dark w-50">+</button>
+              <button id="toggle-zoom-out-button" class="btn btn-outline-dark w-50">-</button>
+            </div>
           </div>
 
-          <!-- Zoom buttons -->
-          <div class="tool-box">
-            <button class="btn btn-outline-dark w-100" id="toggle-zoom-in-button">Zoom In</button>
-            <button class="btn btn-outline-dark w-100" id="toggle-zoom-out-button">Zoom Out</button>
-          </div>
+          <!-- ========================= -->
+          <!-- LOCATION RESOURCES       -->
+          <!-- ========================= -->
+          <div class="mb-4">
+            <h6 class="fw-semibold">Location Tools</h6>
 
-          <!-- Get coordinates -->
-          <div class="tool-box">
-            <button class="btn btn-outline-dark w-100" id="get-coordinates-button">
-              Get Coordinates
-            </button>
-          </div>
-
-          <div class="tool-box">
-            <button id="track-me-btn" class="btn btn-primary w-100">
+            <button id="track-me-btn" class="btn btn-primary w-100 mb-2">
               Show My Live Location
             </button>
+
+            <button id="get-coordinates-button" class="btn btn-outline-secondary w-100 mb-2">
+              Pick Coordinates
+            </button>
+
+            <button id="use-my-location-btn" class="btn btn-outline-secondary w-100">
+              Use My Location
+            </button>
           </div>
 
-          <!-- Closest cafés -->
-          <div id="closest-tool" class="tool-box">
-            <h6>Find Closest Cafés</h6>
-            <label>Latitude:</label>
-            <input type="number" id="latInput" step="any" class="form-control" placeholder="53.34">
+          <!-- ========================= -->
+          <!-- CLOSEST CAFÉ SEARCH      -->
+          <!-- ========================= -->
+          <div class="mb-4">
+            <h6 class="fw-semibold">Closest Café</h6>
 
-            <label>Longitude:</label>
-            <input type="number" id="lngInput" step="any" class="form-control" placeholder="-6.26">
+            <input type="number" id="latInput" step="any" class="form-control mb-2" placeholder="Latitude">
+            <input type="number" id="lngInput" step="any" class="form-control mb-2" placeholder="Longitude">
 
-            <button id="closest_cafes_button" class="btn btn-dark mt-2 w-100">Find</button>
+            <button id="closest_cafes_button" class="btn btn-dark w-100 mb-2">
+              Find Closest
+            </button>
 
-            <button id="use-my-location-closest" class="btn btn-secondary w-100 mt-2">
+            <button id="use-my-location-closest" class="btn btn-secondary w-100 mb-2">
               Use My Location
             </button>
 
-            <button id="pick-on-map-closest" class="btn btn-outline-secondary w-100 mt-2">
-              Pick Location on Map
+            <button id="pick-on-map-closest" class="btn btn-outline-secondary w-100">
+              Pick on Map
             </button>
+
+            <div id="cafe-list" class="mt-3"></div>
           </div>
 
-          <!-- Cafés within radius -->
-          <div id="radius-tool" class="tool-box">
-            <h6>Find Cafés Within Radius</h6>
+          <!-- ========================= -->
+          <!-- RADIUS SEARCH            -->
+          <!-- ========================= -->
+          <div>
+            <h6 class="fw-semibold">Cafés Within Radius</h6>
 
-            <label>Latitude:</label>
-            <input id="latRadius" type="number" step="any" class="form-control" placeholder="53.34">
+            <input type="number" id="latRadius" step="any" class="form-control mb-2" placeholder="Latitude">
+            <input type="number" id="lngRadius" step="any" class="form-control mb-2" placeholder="Longitude">
+            <input type="number" id="radiusInput" class="form-control mb-3" placeholder="Radius (meters)">
 
-            <label>Longitude:</label>
-            <input id="lngRadius" type="number" step="any" class="form-control" placeholder="-6.26">
+            <button id="cafes_within_radius_button" class="btn btn-dark w-100 mb-2">
+              Search
+            </button>
 
-            <label>Radius (meters):</label>
-            <input id="radiusInput" type="number" class="form-control" placeholder="1000">
-
-            <button id="cafes_within_radius_button" class="btn btn-dark mt-2 w-100">Find</button>
-
-            <button id="use-my-location-radius" class="btn btn-secondary w-100 mt-2">
+            <button id="use-my-location-radius" class="btn btn-secondary w-100 mb-2">
               Use My Location
             </button>
 
-            <button id="pick-on-map-radius" class="btn btn-outline-secondary w-100 mt-2">
-              Pick Location on Map
+            <button id="pick-on-map-radius" class="btn btn-outline-secondary w-100">
+              Pick on Map
             </button>
 
-
+            <div id="radius-list" class="mt-3"></div>
           </div>
-
-          <!-- Results lists -->
-          <div id="cafe-list" class="mt-3"></div>
-          <div id="radius-list" class="mt-3"></div>
 
         </div>
       </div>
 
-      <!-- Map -->
+      <!-- MAP AREA -->
       <div class="col-md-9">
-        <div id="map"></div>
-        <div id="status" class="mt-2 text-muted small">..</div>
-        <div id="coords-display" class="text-muted small">..</div>
+        <div id="map" style="height: 650px; border-radius: 8px;"></div>
+
+        <div class="mt-2 text-muted small" id="status">Ready.</div>
+        <div class="text-muted small" id="coords-display">Lat/Lng will appear here…</div>
       </div>
 
     </div>
