@@ -14,7 +14,7 @@ class CountyAdmin(GISModelAdmin):
     readonly_fields = (
         "ogc_fid",
         "geometry",
-        "co_id",
+        "co_id", 
         "countyname",
         "english",
         "gaeilge",

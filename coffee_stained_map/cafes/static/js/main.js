@@ -1,9 +1,10 @@
 console.log("🔥 main.js loaded");
 
 document.addEventListener("DOMContentLoaded", () => {
-  /* ---------------------------------------------
-    MAP SETUP
-  ---------------------------------------------- */
+
+  // ============================================================
+  // MAP INITIALISATION
+  // ============================================================
   const map = L.map("map").setView([53.34731, -6.258946], 11);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -11,24 +12,29 @@ document.addEventListener("DOMContentLoaded", () => {
     attribution: "&copy; OpenStreetMap contributors",
   }).addTo(map);
 
+  // Layers
   let markersLayer = L.markerClusterGroup().addTo(map);
   let countiesLayer = L.layerGroup().addTo(map);
   let radiusCircle = null;
 
-  // Expose for debugging if needed
+  // Expose for debugging in browser console
   window.map = map;
   window.countiesLayer = countiesLayer;
 
-  /* ---------------------------------------------
-    HELPER: NORMALISE CAFE DATA TO FEATURECOLLECTION
-  ---------------------------------------------- */
+
+  // ============================================================
+  // HELPER — Ensure backend data is a valid FeatureCollection
+  // ============================================================
   function normaliseToFeatureCollection(data) {
-    // If backend already returns FeatureCollection
-    if (data && data.type === "FeatureCollection" && Array.isArray(data.features)) {
+
+    // Case 1: Proper FeatureCollection with array features
+    if (data &&
+        data.type === "FeatureCollection" &&
+        Array.isArray(data.features)) {
       return data;
     }
 
-    // If backend returns an array of GeoJSON Features (DRF GIS many=True)
+    // Case 2: Backend returned raw array of Features
     if (Array.isArray(data)) {
       return {
         type: "FeatureCollection",
@@ -36,26 +42,15 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     }
 
-//       // Populate dropdown
-//       const select = document.getElementById("county-select");
-//       geojson.features.forEach(f => {
-//         console.log("populating dropdown");
-//         const opt = document.createElement("option");
-//         opt.value = f.properties.english_name;
-//         opt.textContent = f.properties.english_name;
-//         select.appendChild(opt);
-//       });
-//     })
-//     .catch(err => console.error("Error loading counties:", err));
-// =======
-//     // Unknown / bad format
-//     console.warn("Unexpected café data format:", data);
-//     return null;
+    // Case 3: Unexpected data format (rare)
+    console.warn("Unexpected café data format:", data);
+    return null;
   }
 
-  /* ---------------------------------------------
-    HELPER: ADD CAFÉS TO MAP
-  ---------------------------------------------- */
+
+  // ============================================================
+  // HELPER — Add cafés to map (clears old markers)
+  // ============================================================
   function addCafes(data) {
     markersLayer.clearLayers();
 
@@ -78,20 +73,22 @@ document.addEventListener("DOMContentLoaded", () => {
     markersLayer.addLayer(geoLayer);
   }
 
-  /* ---------------------------------------------
-    LOAD COUNTY POLYGONS + POPULATE DROPDOWN
-  ---------------------------------------------- */
+
+  // ============================================================
+  // LOAD COUNTY POLYGONS + POPULATE COUNTY DROPDOWN
+  // ============================================================
   fetch("/api/counties/")
     .then(res => res.json())
     .then(geojson => {
-      // Draw counties
+
+      // Render counties
       L.geoJSON(geojson, {
         style: { color: "#ff8800", weight: 1, fillOpacity: 0 },
         onEachFeature: (feature, layer) => {
           const props = feature.properties;
           layer.bindPopup(`
             <i>${props.gaeilge_name}</i><br>
-            <b>${props.english_name}, ${props.province}</b><br>
+            <b>${props.english_name}, ${props.province}</b>
           `);
         }
       }).addTo(countiesLayer);
@@ -99,48 +96,54 @@ document.addEventListener("DOMContentLoaded", () => {
       // Populate dropdown
       const select = document.getElementById("county-select");
       geojson.features.forEach(f => {
-        const props = f.properties;
-        const name = props.english_name;
-
+        const { english_name } = f.properties;
         const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
+        opt.value = english_name;
+        opt.textContent = english_name;
         select.appendChild(opt);
       });
+
     })
     .catch(err => console.error("Error loading counties:", err));
 
-  /* ---------------------------------------------
-    LOAD ALL CAFÉS (helper)
-  ---------------------------------------------- */
+
+  // ============================================================
+  // LOAD ALL CAFÉS (initial load + reset)
+  // ============================================================
   function loadAllCafes() {
     fetch("/api/cafes_osm/")
       .then(res => res.json())
       .then(data => {
+
+        // Handle stringified JSON edge case
         if (typeof data === "string") {
-          try {
-            data = JSON.parse(data);
-          } catch (e) {
-            console.error("Error parsing cafes_osm JSON string:", e);
+          try { data = JSON.parse(data); } 
+          catch (e) {
+            console.error("Error parsing cafes_osm string:", e);
             return;
           }
         }
+
         addCafes(data);
       })
       .catch(err => console.error("Error loading initial cafés:", err));
   }
 
-  // Initial load
-  loadAllCafes();
+  loadAllCafes(); // Initial call
 
-  /* ---------------------------------------------
-    FILTER: BY COUNTY
-  ---------------------------------------------- */
+
+  // ============================================================
+  // FILTER BY COUNTY
+  // ============================================================
   document.getElementById("county-select").addEventListener("change", async function () {
     const countyName = this.value;
 
-    // If blank, reload all cafés
+    console.log("County selected RAW VALUE:", JSON.stringify(countyName));
+
+
+    // Empty value → reset map
     if (!countyName) {
+      console.log("County is EMPTY STRING");
       loadAllCafes();
       return;
     }
@@ -148,11 +151,11 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch(`/api/cafes_in_county/${encodeURIComponent(countyName)}/`);
       let data = await res.json();
+
       if (typeof data === "string") {
-        try {
-          data = JSON.parse(data);
-        } catch (e) {
-          console.error("Error parsing cafes_in_county JSON string:", e);
+        try { data = JSON.parse(data); }
+        catch (e) {
+          console.error("Error parsing cafes_in_county string:", e);
           return;
         }
       }
@@ -160,19 +163,21 @@ document.addEventListener("DOMContentLoaded", () => {
       addCafes(data);
 
       const fc = normaliseToFeatureCollection(data);
-      const features = fc ? fc.features : [];
+      const features = fc?.features || [];
 
-      if (!features || !features.length) {
+      if (!features.length) {
         alert(`No cafés found in ${countyName}.`);
       }
+
     } catch (err) {
       console.error("Error loading county cafés:", err);
     }
   });
 
-  /* ---------------------------------------------
-    FIND CLOSEST CAFÉS
-  ---------------------------------------------- */
+
+  // ============================================================
+  // FIND CLOSEST CAFÉS
+  // ============================================================
   document.getElementById("closest_cafes_button").addEventListener("click", () => {
     const lat = parseFloat(document.getElementById("latInput").value);
     const lng = parseFloat(document.getElementById("lngInput").value);
@@ -185,13 +190,10 @@ document.addEventListener("DOMContentLoaded", () => {
     fetch(`/api/closest_cafes/?lat=${lat}&lng=${lng}`)
       .then(res => res.json())
       .then(data => {
+
         if (typeof data === "string") {
-          try {
-            data = JSON.parse(data);
-          } catch (e) {
-            console.error("Error parsing closest_cafes JSON string:", e);
-            return;
-          }
+          try { data = JSON.parse(data); }
+          catch (e) { console.error("Parsing error:", e); return; }
         }
 
         addCafes(data);
@@ -203,20 +205,20 @@ document.addEventListener("DOMContentLoaded", () => {
             iconSize: [25, 25],
           })
         })
-          .addTo(map)
-          .bindPopup("Search location")
-          .openPopup();
+        .addTo(map)
+        .bindPopup("Search location")
+        .openPopup();
 
         map.setView([lat, lng], 16);
 
-        // Sidebar list
+        // Sidebar results
         const list = document.getElementById("cafe-list");
         list.innerHTML = "<h6 class='fw-semibold mt-3'>Closest Cafés:</h6>";
 
         const fc = normaliseToFeatureCollection(data);
-        const features = fc ? fc.features : [];
+        const features = fc?.features || [];
 
-        if (features && features.length) {
+        if (features.length) {
           features.forEach(f => {
             const p = f.properties || {};
             list.innerHTML += `
@@ -228,13 +230,15 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           list.innerHTML += "<p>No cafés found.</p>";
         }
+
       })
       .catch(err => console.error("Error loading closest cafés:", err));
   });
 
-  /* ---------------------------------------------
-    CAFÉS WITHIN RADIUS
-  ---------------------------------------------- */
+
+  // ============================================================
+  // CAFÉS WITHIN RADIUS
+  // ============================================================
   document.getElementById("cafes_within_radius_button").addEventListener("click", async () => {
     const lat = parseFloat(document.getElementById("latRadius").value);
     const lng = parseFloat(document.getElementById("lngRadius").value);
@@ -245,14 +249,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Remove previous circle
+    // Remove existing blue circle
     map.eachLayer(layer => {
       if (layer instanceof L.Circle && layer.options.color === "blue") {
         map.removeLayer(layer);
       }
     });
 
-    // Draw new circle
+    // Draw new radius circle
     radiusCircle = L.circle([lat, lng], {
       radius,
       color: "blue",
@@ -266,24 +270,21 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch(`/api/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`);
       let data = await res.json();
+
       if (typeof data === "string") {
-        try {
-          data = JSON.parse(data);
-        } catch (e) {
-          console.error("Error parsing cafes_within_radius JSON string:", e);
-          return;
-        }
+        try { data = JSON.parse(data); }
+        catch (e) { console.error("Parsing error:", e); return; }
       }
+
+      addCafes(data);
 
       const list = document.getElementById("radius-list");
       list.innerHTML = "<h6 class='fw-semibold mt-3'>Cafés Within Radius:</h6>";
 
-      addCafes(data);
-
       const fc = normaliseToFeatureCollection(data);
-      const features = fc ? fc.features : [];
+      const features = fc?.features || [];
 
-      if (features && features.length) {
+      if (features.length) {
         features.forEach(f => {
           const p = f.properties || {};
           list.innerHTML += `
@@ -301,10 +302,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  /* ---------------------------------------------
-    TOGGLE COUNTY LAYER
-  ---------------------------------------------- */
+
+  // ============================================================
+  // SHOW / HIDE COUNTIES LAYER
+  // ============================================================
   let countiesVisible = true;
+
   document.getElementById("toggle-counties-button").addEventListener("click", () => {
     if (countiesVisible) {
       map.removeLayer(countiesLayer);
@@ -318,53 +321,46 @@ document.addEventListener("DOMContentLoaded", () => {
       countiesVisible ? "Hide Counties" : "Show Counties";
   });
 
-  /* ---------------------------------------------
-    ZOOM BUTTONS
-  ---------------------------------------------- */
-  document.getElementById("toggle-zoom-in-button").addEventListener("click", () => {
-    map.setZoom(map.getZoom() + 1);
-  });
 
-  document.getElementById("toggle-zoom-out-button").addEventListener("click", () => {
-    map.setZoom(map.getZoom() - 1);
-  });
+  // ============================================================
+  // ZOOM CONTROLS
+  // ============================================================
+  document.getElementById("toggle-zoom-in-button")
+    .addEventListener("click", () => map.setZoom(map.getZoom() + 1));
 
-  /* ---------------------------------------------
-    GET COORDINATES — TEMPORARILY HIDE COUNTIES
-  ---------------------------------------------- */
+  document.getElementById("toggle-zoom-out-button")
+    .addEventListener("click", () => map.setZoom(map.getZoom() - 1));
+
+
+  // ============================================================
+  // GET COORDINATES — TEMPORARILY HIDE COUNTIES
+  // ============================================================
   document.getElementById("get-coordinates-button").addEventListener("click", () => {
-    console.log("Get Coordinates button clicked");
 
     document.getElementById("status").textContent =
       "Click anywhere on the map to select coordinates.";
 
-    // REMOVE the counties layer from the map
+    // Temporarily hide counties
     if (map.hasLayer(countiesLayer)) {
-      console.log("Removing counties layer temporarily");
       map.removeLayer(countiesLayer);
     }
 
     function onMapClick(e) {
-      console.log("Map click detected!", e);
-
       const { lat, lng } = e.latlng;
 
       document.getElementById("coords-display").textContent =
         `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
-      console.log(`Coordinates selected: ${lat}, ${lng}`);
 
-      // Stop listening for additional clicks
-      console.log("Removing click listener");
+      // Stop listening
       map.off("click", onMapClick);
 
-      // RESTORE the counties layer
-      console.log("Restoring counties layer");
+      // Restore counties
       map.addLayer(countiesLayer);
 
       document.getElementById("status").textContent = "Coordinate selected.";
     }
 
-    console.log("Adding click listener to map");
     map.on("click", onMapClick);
   });
+
 });
