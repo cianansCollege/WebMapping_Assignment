@@ -485,49 +485,79 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ============================================================
-  // PICK LOCATION ON MAP — CLOSEST CAFÉS
+  // PICK LOCATION ON MAP (for closest cafés)
   // ============================================================
-  document.getElementById("pick-on-map-closest")?.addEventListener("click", () => {
+  function pickLocationForClosest() {
     console.log("Pick-on-map for closest cafés activated");
-    setStatus("Click a point on the map");
+    setStatus("Click on the map to select location");
 
-    function handler(e) {
-      const lat = e.latlng.lat;
-      const lng = e.latlng.lng;
+    // Hide counties
+    if (map.hasLayer(countiesLayer)) {
+      console.log("Removing counties layer");
+      map.removeLayer(countiesLayer);
+    }
 
-      console.log("Map point chosen for closest cafés:", { lat, lng });
+    function handleClick(e) {
+      const { lat, lng } = e.latlng;
+      console.log("Picked location for closest:", lat, lng);
 
+      // Fill inputs
       closestLatInput.value = lat.toFixed(6);
       closestLngInput.value = lng.toFixed(6);
 
-      map.off("click", handler);
+      // Restore counties
+      console.log("Restoring counties layer");
+      map.addLayer(countiesLayer);
+
+      // Remove listener
+      map.off("click", handleClick);
+
+      // Run closest café search
       findClosestCafes();
     }
 
-    map.on("click", handler);
-  });
+    // Listen for ONE click
+    map.on("click", handleClick);
+  }
 
   // ============================================================
-  // PICK LOCATION ON MAP — RADIUS SEARCH
+  // PICK LOCATION ON MAP (for radius search)
   // ============================================================
-  document.getElementById("pick-on-map-radius")?.addEventListener("click", () => {
-    console.log("Pick-on-map for radius cafés activated");
-    setStatus("Click a point on the map");
+  function pickLocationForRadius() {
+    console.log("Pick-on-map for radius activated");
+    setStatus("Click on the map to select center point");
 
-    function handler(e) {
-      const lat = e.latlng.lat;
-      const lng = e.latlng.lng;
+    // Hide counties
+    if (map.hasLayer(countiesLayer)) {
+      console.log("Removing counties layer");
+      map.removeLayer(countiesLayer);
+    }
 
-      console.log("Map point chosen for radius cafés:", { lat, lng });
+    function handleClick(e) {
+      const { lat, lng } = e.latlng;
+      console.log("Picked location for radius:", lat, lng);
 
+      // Fill inputs
       radiusLatInput.value = lat.toFixed(6);
       radiusLngInput.value = lng.toFixed(6);
 
-      map.off("click", handler);
+      // Restore counties
+      console.log("Restoring counties layer");
+      map.addLayer(countiesLayer);
+
+      // Remove listener
+      map.off("click", handleClick);
+
+      // Run radius search
+      findCafesWithinRadius();
     }
 
-    map.on("click", handler);
-  });
+    // Listen for ONE click
+    map.on("click", handleClick);
+  }
+
+  document.getElementById("pick-on-map-closest")?.addEventListener("click", pickLocationForClosest);
+  document.getElementById("pick-on-map-radius")?.addEventListener("click", pickLocationForRadius);
 
 
   // ============================================================
