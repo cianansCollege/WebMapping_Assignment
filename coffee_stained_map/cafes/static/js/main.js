@@ -118,6 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function addCafes(data) {
+    window.lastCafes = data;
     console.log("addCafes() called with:", data);
     markersLayer.clearLayers();
 

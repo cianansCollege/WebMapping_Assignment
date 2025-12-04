@@ -42,17 +42,8 @@ class CafeOSMViewSet(ReadOnlyModelViewSet):
 # HELPER — Convert QuerySets to GeoJSON FeatureCollection
 # ------------------------------------------------------------
 def cafes_to_featurecollection(cafes):
-    """
-    Convert a CafeOSM queryset into a GeoJSON FeatureCollection.
-    Uses CafeOSMSerializer to generate individual GeoJSON Features.
-    """
     serializer = CafeOSMSerializer(cafes, many=True)
-    features = list(serializer.data)  # list of GeoJSON features
-
-    return {
-        "type": "FeatureCollection",
-        "features": features
-    }
+    return serializer.data 
 
 
 # ============================================================
@@ -94,6 +85,8 @@ def cafes_within_radius(request):
 # ------------------------------------------------------------
 @api_view(['GET'])
 def cafes_closest(request):
+    print("### USING THIS cafes_closest VIEW ###")
+
     lat = float(request.GET.get("lat"))
     lng = float(request.GET.get("lng"))
     limit = int(request.GET.get("limit", 5))
