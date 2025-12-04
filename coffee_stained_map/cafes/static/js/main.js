@@ -437,6 +437,98 @@ document.addEventListener("DOMContentLoaded", () => {
 
     map.on("click", onMapClick);
   }
+  // ============================================================
+  // GET BROWSER LOCATION
+  // ============================================================
+  function getBrowserLocation(callback) {
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        callback(lat, lng);
+      },
+      err => {
+        console.error("GPS error", err);
+        alert("Unable to get location.");
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 8000
+      }
+    );
+  }
+
+    // ============================================================
+  // USE MY LOCATION (auto-fill inputs)
+  // ============================================================
+  document.getElementById("use-my-location-closest")?.addEventListener("click", () => {
+    console.log("Using browser location for closest cafés...");
+    getBrowserLocation((lat, lng) => {
+      closestLatInput.value = lat.toFixed(6);
+      closestLngInput.value = lng.toFixed(6);
+      findClosestCafes();   // Auto-run the search
+    });
+  });
+
+  document.getElementById("use-my-location-radius")?.addEventListener("click", () => {
+    console.log("Using browser location for radius cafés...");
+    getBrowserLocation((lat, lng) => {
+      radiusLatInput.value = lat.toFixed(6);
+      radiusLngInput.value = lng.toFixed(6);
+      // Do NOT auto-run — user must choose radius
+    });
+  });
+
+  // ============================================================
+  // PICK LOCATION ON MAP — CLOSEST CAFÉS
+  // ============================================================
+  document.getElementById("pick-on-map-closest")?.addEventListener("click", () => {
+    console.log("Pick-on-map for closest cafés activated");
+    setStatus("Click a point on the map");
+
+    function handler(e) {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+
+      console.log("Map point chosen for closest cafés:", { lat, lng });
+
+      closestLatInput.value = lat.toFixed(6);
+      closestLngInput.value = lng.toFixed(6);
+
+      map.off("click", handler);
+      findClosestCafes();
+    }
+
+    map.on("click", handler);
+  });
+
+  // ============================================================
+  // PICK LOCATION ON MAP — RADIUS SEARCH
+  // ============================================================
+  document.getElementById("pick-on-map-radius")?.addEventListener("click", () => {
+    console.log("Pick-on-map for radius cafés activated");
+    setStatus("Click a point on the map");
+
+    function handler(e) {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+
+      console.log("Map point chosen for radius cafés:", { lat, lng });
+
+      radiusLatInput.value = lat.toFixed(6);
+      radiusLngInput.value = lng.toFixed(6);
+
+      map.off("click", handler);
+    }
+
+    map.on("click", handler);
+  });
+
 
   // ============================================================
   // EVENT LISTENERS
