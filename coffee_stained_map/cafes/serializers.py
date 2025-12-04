@@ -14,3 +14,4 @@ class CafeOSMSerializer(GeoFeatureModelSerializer):
             'addr_street',
             'addr_postcode',
         )
+  

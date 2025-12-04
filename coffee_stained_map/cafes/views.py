@@ -47,7 +47,7 @@ def cafes_to_featurecollection(cafes):
     Uses CafeOSMSerializer to generate individual GeoJSON Features.
     """
     serializer = CafeOSMSerializer(cafes, many=True)
-    features = serializer.data  # list of GeoJSON features
+    features = list(serializer.data)  # list of GeoJSON features
 
     return {
         "type": "FeatureCollection",

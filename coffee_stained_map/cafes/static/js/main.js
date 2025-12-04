@@ -1,11 +1,12 @@
-console.log("🔥 main.js loaded");
+console.log("main.js loaded");
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("🟢 DOM ready");
+  console.log("DOM ready");
 
   // ============================================================
   // MAP INITIALISATION
   // ============================================================
+  console.log("Initialising map...");
   const map = L.map("map").setView([53.34731, -6.258946], 11);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -13,12 +14,11 @@ document.addEventListener("DOMContentLoaded", () => {
     attribution: "&copy; OpenStreetMap contributors",
   }).addTo(map);
 
-  // Layers
   const markersLayer = L.markerClusterGroup().addTo(map);
   const countiesLayer = L.layerGroup().addTo(map);
   let radiusCircle = null;
 
-  // Expose for debugging
+  // Debug exposure
   window.map = map;
   window.countiesLayer = countiesLayer;
 
@@ -44,49 +44,55 @@ document.addEventListener("DOMContentLoaded", () => {
   const radiusInput            = document.getElementById("radiusInput");
   const radiusListEl           = document.getElementById("radius-list");
 
+  const trackMeBtn             = document.getElementById("track-me-btn");
+
   // ============================================================
   // SMALL UI HELPERS
   // ============================================================
   function setStatus(msg) {
+    console.log(`STATUS: ${msg}`);
     if (statusEl) statusEl.textContent = msg;
   }
 
   function setCoordsText(msg) {
+    console.log(`COORD SELECTED: ${msg}`);
     if (coordsDisplayEl) coordsDisplayEl.textContent = msg;
   }
 
   function clearLists() {
+    console.log("Clearing sidebar lists...");
     if (closestListEl) closestListEl.innerHTML = "";
     if (radiusListEl) radiusListEl.innerHTML = "";
   }
 
   // ============================================================
-  // FETCH HELPER — with basic error handling
+  // FETCH HELPER — logs EVERYTHING
   // ============================================================
-  async function fetchJSON(url, errorLabel = "Request") {
+  async function fetchJSON(url, label = "Request") {
+    console.log(`FETCH → ${url}`);
+
     try {
       const res = await fetch(url);
+      console.log(`RESPONSE (${url}): status=${res.status}`);
 
       if (!res.ok) {
-        console.error(`${errorLabel} failed: HTTP ${res.status}`, res);
+        console.error(`${label} failed: HTTP ${res.status}`);
         return null;
       }
 
       let data = await res.json();
+      console.log(`DATA RECEIVED (${url}):`, data);
 
-      // Handle stringified JSON edge case
+      // Sometimes Django returns a string
       if (typeof data === "string") {
-        try {
-          data = JSON.parse(data);
-        } catch (e) {
-          console.error(`${errorLabel} JSON parse error:`, e);
-          return null;
-        }
+        console.log("Parsing stringified JSON...");
+        data = JSON.parse(data);
       }
 
       return data;
+
     } catch (err) {
-      console.error(`${errorLabel} network error:`, err);
+      console.error(`NETWORK ERROR (${url}):`, err);
       return null;
     }
   }
@@ -95,23 +101,33 @@ document.addEventListener("DOMContentLoaded", () => {
   // GEO HELPERS
   // ============================================================
   function normaliseToFeatureCollection(data) {
-    if (data &&
-        data.type === "FeatureCollection" &&
-        Array.isArray(data.features)) {
+    console.log("Normalising FeatureCollection:", data);
+
+    if (data?.type === "FeatureCollection" && Array.isArray(data.features)) {
+      console.log("→ Already a FeatureCollection");
       return data;
     }
+
     if (Array.isArray(data)) {
+      console.log("→ Converting array → FeatureCollection");
       return { type: "FeatureCollection", features: data };
     }
+
     console.warn("Unexpected GeoJSON format:", data);
     return null;
   }
 
   function addCafes(data) {
+    console.log("addCafes() called with:", data);
     markersLayer.clearLayers();
 
     const fc = normaliseToFeatureCollection(data);
-    if (!fc) return;
+    if (!fc) {
+      console.warn("No valid data passed to addCafes");
+      return;
+    }
+
+    console.log(` Rendering cafés: count=${fc.features.length}`);
 
     const geoLayer = L.geoJSON(fc, {
       pointToLayer: (_, latlng) => L.marker(latlng),
@@ -133,55 +149,143 @@ document.addEventListener("DOMContentLoaded", () => {
   // LOAD COUNTIES + POPULATE DROPDOWN
   // ============================================================
   async function loadCounties() {
+    console.log("Loading counties...");
     const geojson = await fetchJSON("/api/counties/", "Load counties");
     if (!geojson) return;
+
+    console.log("County FeatureCollection:", geojson);
 
     // Render polygons
     L.geoJSON(geojson, {
       style: { color: "#ff8800", weight: 1, fillOpacity: 0 },
       onEachFeature: (feature, layer) => {
-        const props = feature.properties || {};
+        console.log("County feature:", feature);
+        const p = feature.properties || {};
         layer.bindPopup(`
-          <i>${props.gaeilge_name}</i><br>
-          <b>${props.english_name}, ${props.province}</b>
+          <i>${p.gaeilge_name}</i><br>
+          <b>${p.english_name}, ${p.province}</b>
         `);
       }
     }).addTo(countiesLayer);
 
-    // Populate county select
-    if (countySelect) {
-      geojson.features.forEach(f => {
-        const { english_name } = f.properties || {};
-        if (!english_name) return;
+    // Populate dropdown
+    console.log("Populating county dropdown...");
+    geojson.features.forEach(f => {
+      const name = f.properties.english_name;
+      console.log("Adding county option:", name);
 
-        const opt = document.createElement("option");
-        opt.value = english_name;
-        opt.textContent = english_name;
-        countySelect.appendChild(opt);
-      });
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      countySelect.appendChild(opt);
+    });
+
+    console.log("County dropdown complete.");
+  }
+
+  // ============================================================
+  // REAL-TIME USER TRACKING
+  // ============================================================
+  let tracking = false;
+  let userMarker = null;
+  let userAccuracyCircle = null;
+
+  async function toggleTracking() {
+    tracking = !tracking;
+
+    console.log(`Tracking toggled → ${tracking}`);
+    trackMeBtn.textContent = tracking ? "Stop Tracking" : "Start Tracking Me";
+
+    if (!tracking) {
+      console.log("Stopping GPS tracking & clearing markers");
+      if (userMarker) map.removeLayer(userMarker);
+      if (userAccuracyCircle) map.removeLayer(userAccuracyCircle);
+      userMarker = null;
+      userAccuracyCircle = null;
+      return;
     }
+
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported.");
+      return;
+    }
+
+    console.log("Starting GPS watchPosition...");
+
+    navigator.geolocation.watchPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const accuracy = pos.coords.accuracy;
+
+        console.log("GPS UPDATE:", { lat, lng, accuracy });
+
+        if (!userMarker) {
+          console.log("Creating new user marker");
+          userMarker = L.marker([lat, lng], {
+            icon: L.icon({
+              iconUrl: "https://cdn-icons-png.flaticon.com/512/487/487021.png",
+              iconSize: [20, 20],
+            })
+          }).addTo(map);
+        } else {
+          userMarker.setLatLng([lat, lng]);
+        }
+
+        if (!userAccuracyCircle) {
+          console.log("Creating accuracy circle:", accuracy);
+          userAccuracyCircle = L.circle([lat, lng], {
+            radius: accuracy,
+            color: "blue",
+            fillColor: "blue",
+            fillOpacity: 0.15,
+          }).addTo(map);
+        } else {
+          userAccuracyCircle.setLatLng([lat, lng]);
+          userAccuracyCircle.setRadius(accuracy);
+        }
+
+        // Auto-follow
+        console.log("Auto-follow user");
+        map.setView([lat, lng], map.getZoom());
+      },
+
+      (err) => {
+        console.error("GPS ERROR:", err);
+        alert("Unable to track location. Enable GPS.");
+      },
+
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 10000
+      }
+    );
   }
 
   // ============================================================
   // LOAD ALL CAFÉS
   // ============================================================
   async function loadAllCafes() {
+    console.log("Loading ALL cafés...");
     const data = await fetchJSON("/api/cafes_osm/", "Load all cafés");
     if (!data) return;
+
     addCafes(data);
+    console.log("All cafés rendered");
   }
 
   // ============================================================
   // FILTER BY COUNTY
   // ============================================================
   async function loadCafesInCounty(countyName) {
+    console.log("loadCafesInCounty:", countyName);
+
     if (!countyName) {
-      console.log("🔄 Reset to all cafés (empty county selection)");
+      console.log("Empty selection → loading all cafés");
       await loadAllCafes();
       return;
     }
-
-    console.log("📍 Filtering by county:", countyName);
 
     const url = `/api/cafes_in_county/${encodeURIComponent(countyName)}/`;
     const data = await fetchJSON(url, "Load cafés in county");
@@ -191,9 +295,8 @@ document.addEventListener("DOMContentLoaded", () => {
     addCafes(data);
 
     const fc = normaliseToFeatureCollection(data);
-    const features = fc?.features || [];
-
-    if (!features.length) {
+    if (!fc?.features?.length) {
+      console.warn(`No cafés found in ${countyName}`);
       alert(`No cafés found in ${countyName}.`);
     }
   }
@@ -205,8 +308,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const lat = parseFloat(closestLatInput.value);
     const lng = parseFloat(closestLngInput.value);
 
+    console.log("closest search:", { lat, lng });
+
     if (isNaN(lat) || isNaN(lng)) {
-      alert("Enter valid coordinates");
+      alert("Invalid coordinates");
       return;
     }
 
@@ -216,70 +321,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
     addCafes(data);
 
-    // Mark search point
+    console.log("Marking search point");
     L.marker([lat, lng], {
       icon: L.icon({
         iconUrl: "https://cdn-icons-png.flaticon.com/512/64/64113.png",
         iconSize: [25, 25],
       })
-    })
-      .addTo(map)
-      .bindPopup("Search location")
-      .openPopup();
+    }).addTo(map).bindPopup("Search location").openPopup();
 
     map.setView([lat, lng], 16);
 
-    // Sidebar list
-    if (closestListEl) {
-      closestListEl.innerHTML = "<h6 class='fw-semibold mt-3'>Closest Cafés:</h6>";
+    closestListEl.innerHTML = "<h6>Closest Cafés:</h6>";
 
-      const fc = normaliseToFeatureCollection(data);
-      const features = fc?.features || [];
-
-      if (features.length) {
-        features.forEach(f => {
-          const p = f.properties || {};
-          closestListEl.innerHTML += `
-            <div class="border-bottom pb-2 mb-2">
-              <b>${p.name ?? "Unnamed Café"}</b><br>
-              ${p.addr_street ?? ""} ${p.addr_city ?? ""}<br>
-            </div>`;
-        });
-      } else {
-        closestListEl.innerHTML += "<p>No cafés found.</p>";
-      }
-    }
+    const fc = normaliseToFeatureCollection(data);
+    fc.features.forEach(f => {
+      const p = f.properties || {};
+      closestListEl.innerHTML += `
+        <div class="border-bottom pb-2 mb-2">
+          <b>${p.name ?? "Unnamed Café"}</b><br>
+          ${p.addr_street ?? ""} ${p.addr_city ?? ""}
+        </div>
+      `;
+    });
   }
 
   // ============================================================
   // CAFÉS WITHIN RADIUS
   // ============================================================
   async function findCafesWithinRadius() {
-    const lat    = parseFloat(radiusLatInput.value);
-    const lng    = parseFloat(radiusLngInput.value);
+    const lat = parseFloat(radiusLatInput.value);
+    const lng = parseFloat(radiusLngInput.value);
     const radius = parseFloat(radiusInput.value);
 
+    console.log("radius search:", { lat, lng, radius });
+
     if (isNaN(lat) || isNaN(lng) || isNaN(radius)) {
-      alert("Please enter valid coordinates and radius");
+      alert("Invalid radius search");
       return;
     }
 
-    // Remove existing blue circle
+    // Remove old
     map.eachLayer(layer => {
       if (layer instanceof L.Circle && layer.options.color === "blue") {
         map.removeLayer(layer);
       }
     });
 
-    // Draw new radius circle
+    console.log("Drawing radius circle...");
     radiusCircle = L.circle([lat, lng], {
       radius,
       color: "blue",
       fillOpacity: 0.1,
-    })
-      .addTo(map)
-      .bindPopup(`Search area: ${radius} m`)
-      .openPopup();
+    }).addTo(map).bindPopup(`Search radius: ${radius} m`).openPopup();
 
     map.setView([lat, lng], 14);
 
@@ -289,25 +382,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     addCafes(data);
 
-    if (radiusListEl) {
-      radiusListEl.innerHTML = "<h6 class='fw-semibold mt-3'>Cafés Within Radius:</h6>";
+    radiusListEl.innerHTML = "<h6>Cafés Within Radius:</h6>";
 
-      const fc = normaliseToFeatureCollection(data);
-      const features = fc?.features || [];
-
-      if (features.length) {
-        features.forEach(f => {
-          const p = f.properties || {};
-          radiusListEl.innerHTML += `
-            <div class="border-bottom pb-2 mb-2">
-              <b>${p.name ?? "Unnamed Café"}</b><br>
-              ${p.addr_street ?? ""} ${p.addr_city ?? ""}<br>
-            </div>`;
-        });
-      } else {
-        radiusListEl.innerHTML += "<p>No cafés found within this radius.</p>";
-      }
-    }
+    const fc = normaliseToFeatureCollection(data);
+    fc.features.forEach(f => {
+      const p = f.properties || {};
+      radiusListEl.innerHTML += `
+        <div class="border-bottom pb-2 mb-2">
+          <b>${p.name ?? "Unnamed Café"}</b><br>
+          ${p.addr_street ?? ""} ${p.addr_city ?? ""}
+        </div>
+      `;
+    });
   }
 
   // ============================================================
@@ -316,6 +402,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let countiesVisible = true;
 
   function toggleCounties() {
+    console.log("Toggle counties:", !countiesVisible);
+
     if (countiesVisible) {
       map.removeLayer(countiesLayer);
     } else {
@@ -323,31 +411,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     countiesVisible = !countiesVisible;
-
-    toggleCountiesBtn.textContent = countiesVisible
-      ? "Hide Counties"
-      : "Show Counties";
+    toggleCountiesBtn.textContent = countiesVisible ? "Hide Counties" : "Show Counties";
   }
 
   // ============================================================
   // GET COORDINATES
   // ============================================================
   function activateGetCoordinates() {
+    console.log("Activating coordinate picker");
     setStatus("Click anywhere on the map to select coordinates.");
 
-    // Hide counties while picking
-    if (map.hasLayer(countiesLayer)) {
-      map.removeLayer(countiesLayer);
-    }
+    if (map.hasLayer(countiesLayer)) map.removeLayer(countiesLayer);
 
     function onMapClick(e) {
       const { lat, lng } = e.latlng;
+      console.log("Clicked at:", { lat, lng });
 
       setCoordsText(`Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`);
 
       map.off("click", onMapClick);
       map.addLayer(countiesLayer);
-
       setStatus("Coordinate selected.");
     }
 
@@ -357,51 +440,30 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============================================================
   // EVENT LISTENERS
   // ============================================================
-  if (countySelect) {
-    countySelect.addEventListener("change", e => {
-      const countyName = e.target.value;
-      loadCafesInCounty(countyName);
-    });
-  }
+  countySelect?.addEventListener("change", e => {
+    console.log("County dropdown changed →", e.target.value);
+    loadCafesInCounty(e.target.value);
+  });
 
-  if (closestBtn) {
-    closestBtn.addEventListener("click", findClosestCafes);
-  }
-
-  if (radiusBtn) {
-    radiusBtn.addEventListener("click", findCafesWithinRadius);
-  }
-
-  if (toggleCountiesBtn) {
-    toggleCountiesBtn.addEventListener("click", toggleCounties);
-  }
-
-  if (zoomInBtn) {
-    zoomInBtn.addEventListener("click", () =>
-      map.setZoom(map.getZoom() + 1)
-    );
-  }
-
-  if (zoomOutBtn) {
-    zoomOutBtn.addEventListener("click", () =>
-      map.setZoom(map.getZoom() - 1)
-    );
-  }
-
-  if (getCoordsBtn) {
-    getCoordsBtn.addEventListener("click", activateGetCoordinates);
-  }
+  closestBtn?.addEventListener("click", findClosestCafes);
+  radiusBtn?.addEventListener("click", findCafesWithinRadius);
+  toggleCountiesBtn?.addEventListener("click", toggleCounties);
+  zoomInBtn?.addEventListener("click", () => map.setZoom(map.getZoom() + 1));
+  zoomOutBtn?.addEventListener("click", () => map.setZoom(map.getZoom() - 1));
+  getCoordsBtn?.addEventListener("click", activateGetCoordinates);
+  trackMeBtn?.addEventListener("click", toggleTracking);
 
   // ============================================================
   // INITIAL LOAD
   // ============================================================
   (async () => {
+    console.log("Initial load starting...");
     setStatus("Loading data…");
-    await Promise.all([
-      loadCounties(),
-      loadAllCafes(),
-    ]);
-    setStatus("Ready.");
-  })();
 
+    await loadCounties();
+    await loadAllCafes();
+
+    setStatus("Ready.");
+    console.log("App ready.");
+  })();
 });
