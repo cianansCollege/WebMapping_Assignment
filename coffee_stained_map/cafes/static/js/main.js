@@ -1,6 +1,7 @@
 console.log("🔥 main.js loaded");
 
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("🟢 DOM ready");
 
   // ============================================================
   // MAP INITIALISATION
@@ -13,44 +14,99 @@ document.addEventListener("DOMContentLoaded", () => {
   }).addTo(map);
 
   // Layers
-  let markersLayer = L.markerClusterGroup().addTo(map);
-  let countiesLayer = L.layerGroup().addTo(map);
+  const markersLayer = L.markerClusterGroup().addTo(map);
+  const countiesLayer = L.layerGroup().addTo(map);
   let radiusCircle = null;
 
-  // Expose for debugging in browser console
+  // Expose for debugging
   window.map = map;
   window.countiesLayer = countiesLayer;
 
+  // ============================================================
+  // DOM ELEMENTS
+  // ============================================================
+  const countySelect           = document.getElementById("county-select");
+  const toggleCountiesBtn      = document.getElementById("toggle-counties-button");
+  const zoomInBtn              = document.getElementById("toggle-zoom-in-button");
+  const zoomOutBtn             = document.getElementById("toggle-zoom-out-button");
+  const getCoordsBtn           = document.getElementById("get-coordinates-button");
+  const statusEl               = document.getElementById("status");
+  const coordsDisplayEl        = document.getElementById("coords-display");
+
+  const closestBtn             = document.getElementById("closest_cafes_button");
+  const closestLatInput        = document.getElementById("latInput");
+  const closestLngInput        = document.getElementById("lngInput");
+  const closestListEl          = document.getElementById("cafe-list");
+
+  const radiusBtn              = document.getElementById("cafes_within_radius_button");
+  const radiusLatInput         = document.getElementById("latRadius");
+  const radiusLngInput         = document.getElementById("lngRadius");
+  const radiusInput            = document.getElementById("radiusInput");
+  const radiusListEl           = document.getElementById("radius-list");
 
   // ============================================================
-  // HELPER — Ensure backend data is a valid FeatureCollection
+  // SMALL UI HELPERS
+  // ============================================================
+  function setStatus(msg) {
+    if (statusEl) statusEl.textContent = msg;
+  }
+
+  function setCoordsText(msg) {
+    if (coordsDisplayEl) coordsDisplayEl.textContent = msg;
+  }
+
+  function clearLists() {
+    if (closestListEl) closestListEl.innerHTML = "";
+    if (radiusListEl) radiusListEl.innerHTML = "";
+  }
+
+  // ============================================================
+  // FETCH HELPER — with basic error handling
+  // ============================================================
+  async function fetchJSON(url, errorLabel = "Request") {
+    try {
+      const res = await fetch(url);
+
+      if (!res.ok) {
+        console.error(`${errorLabel} failed: HTTP ${res.status}`, res);
+        return null;
+      }
+
+      let data = await res.json();
+
+      // Handle stringified JSON edge case
+      if (typeof data === "string") {
+        try {
+          data = JSON.parse(data);
+        } catch (e) {
+          console.error(`${errorLabel} JSON parse error:`, e);
+          return null;
+        }
+      }
+
+      return data;
+    } catch (err) {
+      console.error(`${errorLabel} network error:`, err);
+      return null;
+    }
+  }
+
+  // ============================================================
+  // GEO HELPERS
   // ============================================================
   function normaliseToFeatureCollection(data) {
-
-    // Case 1: Proper FeatureCollection with array features
     if (data &&
         data.type === "FeatureCollection" &&
         Array.isArray(data.features)) {
       return data;
     }
-
-    // Case 2: Backend returned raw array of Features
     if (Array.isArray(data)) {
-      return {
-        type: "FeatureCollection",
-        features: data,
-      };
+      return { type: "FeatureCollection", features: data };
     }
-
-    // Case 3: Unexpected data format (rare)
-    console.warn("Unexpected café data format:", data);
+    console.warn("Unexpected GeoJSON format:", data);
     return null;
   }
 
-
-  // ============================================================
-  // HELPER — Add cafés to map (clears old markers)
-  // ============================================================
   function addCafes(data) {
     markersLayer.clearLayers();
 
@@ -73,176 +129,135 @@ document.addEventListener("DOMContentLoaded", () => {
     markersLayer.addLayer(geoLayer);
   }
 
-
   // ============================================================
-  // LOAD COUNTY POLYGONS + POPULATE COUNTY DROPDOWN
+  // LOAD COUNTIES + POPULATE DROPDOWN
   // ============================================================
-  fetch("/api/counties/")
-    .then(res => res.json())
-    .then(geojson => {
+  async function loadCounties() {
+    const geojson = await fetchJSON("/api/counties/", "Load counties");
+    if (!geojson) return;
 
-      // Render counties
-      L.geoJSON(geojson, {
-        style: { color: "#ff8800", weight: 1, fillOpacity: 0 },
-        onEachFeature: (feature, layer) => {
-          const props = feature.properties;
-          layer.bindPopup(`
-            <i>${props.gaeilge_name}</i><br>
-            <b>${props.english_name}, ${props.province}</b>
-          `);
-        }
-      }).addTo(countiesLayer);
+    // Render polygons
+    L.geoJSON(geojson, {
+      style: { color: "#ff8800", weight: 1, fillOpacity: 0 },
+      onEachFeature: (feature, layer) => {
+        const props = feature.properties || {};
+        layer.bindPopup(`
+          <i>${props.gaeilge_name}</i><br>
+          <b>${props.english_name}, ${props.province}</b>
+        `);
+      }
+    }).addTo(countiesLayer);
 
-      // Populate dropdown
-      const select = document.getElementById("county-select");
+    // Populate county select
+    if (countySelect) {
       geojson.features.forEach(f => {
-        const { english_name } = f.properties;
+        const { english_name } = f.properties || {};
+        if (!english_name) return;
+
         const opt = document.createElement("option");
         opt.value = english_name;
         opt.textContent = english_name;
-        select.appendChild(opt);
+        countySelect.appendChild(opt);
       });
-
-    })
-    .catch(err => console.error("Error loading counties:", err));
-
-
-  // ============================================================
-  // LOAD ALL CAFÉS (initial load + reset)
-  // ============================================================
-  function loadAllCafes() {
-    fetch("/api/cafes_osm/")
-      .then(res => res.json())
-      .then(data => {
-
-        // Handle stringified JSON edge case
-        if (typeof data === "string") {
-          try { data = JSON.parse(data); } 
-          catch (e) {
-            console.error("Error parsing cafes_osm string:", e);
-            return;
-          }
-        }
-
-        addCafes(data);
-      })
-      .catch(err => console.error("Error loading initial cafés:", err));
+    }
   }
 
-  loadAllCafes(); // Initial call
-
+  // ============================================================
+  // LOAD ALL CAFÉS
+  // ============================================================
+  async function loadAllCafes() {
+    const data = await fetchJSON("/api/cafes_osm/", "Load all cafés");
+    if (!data) return;
+    addCafes(data);
+  }
 
   // ============================================================
   // FILTER BY COUNTY
   // ============================================================
-  document.getElementById("county-select").addEventListener("change", async function () {
-    const countyName = this.value;
-
-    console.log("County selected RAW VALUE:", JSON.stringify(countyName));
-
-
-    // Empty value → reset map
+  async function loadCafesInCounty(countyName) {
     if (!countyName) {
-      console.log("County is EMPTY STRING");
-      loadAllCafes();
+      console.log("🔄 Reset to all cafés (empty county selection)");
+      await loadAllCafes();
       return;
     }
 
-    try {
-      const res = await fetch(`/api/cafes_in_county/${encodeURIComponent(countyName)}/`);
-      let data = await res.json();
+    console.log("📍 Filtering by county:", countyName);
 
-      if (typeof data === "string") {
-        try { data = JSON.parse(data); }
-        catch (e) {
-          console.error("Error parsing cafes_in_county string:", e);
-          return;
-        }
-      }
+    const url = `/api/cafes_in_county/${encodeURIComponent(countyName)}/`;
+    const data = await fetchJSON(url, "Load cafés in county");
 
-      addCafes(data);
+    if (!data) return;
 
-      const fc = normaliseToFeatureCollection(data);
-      const features = fc?.features || [];
+    addCafes(data);
 
-      if (!features.length) {
-        alert(`No cafés found in ${countyName}.`);
-      }
+    const fc = normaliseToFeatureCollection(data);
+    const features = fc?.features || [];
 
-    } catch (err) {
-      console.error("Error loading county cafés:", err);
+    if (!features.length) {
+      alert(`No cafés found in ${countyName}.`);
     }
-  });
-
+  }
 
   // ============================================================
   // FIND CLOSEST CAFÉS
   // ============================================================
-  document.getElementById("closest_cafes_button").addEventListener("click", () => {
-    const lat = parseFloat(document.getElementById("latInput").value);
-    const lng = parseFloat(document.getElementById("lngInput").value);
+  async function findClosestCafes() {
+    const lat = parseFloat(closestLatInput.value);
+    const lng = parseFloat(closestLngInput.value);
 
     if (isNaN(lat) || isNaN(lng)) {
       alert("Enter valid coordinates");
       return;
     }
 
-    fetch(`/api/closest_cafes/?lat=${lat}&lng=${lng}`)
-      .then(res => res.json())
-      .then(data => {
+    const url = `/api/closest_cafes/?lat=${lat}&lng=${lng}`;
+    const data = await fetchJSON(url, "Closest cafés");
+    if (!data) return;
 
-        if (typeof data === "string") {
-          try { data = JSON.parse(data); }
-          catch (e) { console.error("Parsing error:", e); return; }
-        }
+    addCafes(data);
 
-        addCafes(data);
-
-        // Mark search point
-        L.marker([lat, lng], {
-          icon: L.icon({
-            iconUrl: "https://cdn-icons-png.flaticon.com/512/64/64113.png",
-            iconSize: [25, 25],
-          })
-        })
-        .addTo(map)
-        .bindPopup("Search location")
-        .openPopup();
-
-        map.setView([lat, lng], 16);
-
-        // Sidebar results
-        const list = document.getElementById("cafe-list");
-        list.innerHTML = "<h6 class='fw-semibold mt-3'>Closest Cafés:</h6>";
-
-        const fc = normaliseToFeatureCollection(data);
-        const features = fc?.features || [];
-
-        if (features.length) {
-          features.forEach(f => {
-            const p = f.properties || {};
-            list.innerHTML += `
-              <div class="border-bottom pb-2 mb-2">
-                <b>${p.name ?? "Unnamed Café"}</b><br>
-                ${p.addr_street ?? ""} ${p.addr_city ?? ""}<br>
-              </div>`;
-          });
-        } else {
-          list.innerHTML += "<p>No cafés found.</p>";
-        }
-
+    // Mark search point
+    L.marker([lat, lng], {
+      icon: L.icon({
+        iconUrl: "https://cdn-icons-png.flaticon.com/512/64/64113.png",
+        iconSize: [25, 25],
       })
-      .catch(err => console.error("Error loading closest cafés:", err));
-  });
+    })
+      .addTo(map)
+      .bindPopup("Search location")
+      .openPopup();
 
+    map.setView([lat, lng], 16);
+
+    // Sidebar list
+    if (closestListEl) {
+      closestListEl.innerHTML = "<h6 class='fw-semibold mt-3'>Closest Cafés:</h6>";
+
+      const fc = normaliseToFeatureCollection(data);
+      const features = fc?.features || [];
+
+      if (features.length) {
+        features.forEach(f => {
+          const p = f.properties || {};
+          closestListEl.innerHTML += `
+            <div class="border-bottom pb-2 mb-2">
+              <b>${p.name ?? "Unnamed Café"}</b><br>
+              ${p.addr_street ?? ""} ${p.addr_city ?? ""}<br>
+            </div>`;
+        });
+      } else {
+        closestListEl.innerHTML += "<p>No cafés found.</p>";
+      }
+    }
+  }
 
   // ============================================================
   // CAFÉS WITHIN RADIUS
   // ============================================================
-  document.getElementById("cafes_within_radius_button").addEventListener("click", async () => {
-    const lat = parseFloat(document.getElementById("latRadius").value);
-    const lng = parseFloat(document.getElementById("lngRadius").value);
-    const radius = parseFloat(document.getElementById("radiusInput").value);
+  async function findCafesWithinRadius() {
+    const lat    = parseFloat(radiusLatInput.value);
+    const lng    = parseFloat(radiusLngInput.value);
+    const radius = parseFloat(radiusInput.value);
 
     if (isNaN(lat) || isNaN(lng) || isNaN(radius)) {
       alert("Please enter valid coordinates and radius");
@@ -261,25 +276,21 @@ document.addEventListener("DOMContentLoaded", () => {
       radius,
       color: "blue",
       fillOpacity: 0.1,
-    }).addTo(map)
+    })
+      .addTo(map)
       .bindPopup(`Search area: ${radius} m`)
       .openPopup();
 
     map.setView([lat, lng], 14);
 
-    try {
-      const res = await fetch(`/api/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`);
-      let data = await res.json();
+    const url = `/api/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`;
+    const data = await fetchJSON(url, "Cafés within radius");
+    if (!data) return;
 
-      if (typeof data === "string") {
-        try { data = JSON.parse(data); }
-        catch (e) { console.error("Parsing error:", e); return; }
-      }
+    addCafes(data);
 
-      addCafes(data);
-
-      const list = document.getElementById("radius-list");
-      list.innerHTML = "<h6 class='fw-semibold mt-3'>Cafés Within Radius:</h6>";
+    if (radiusListEl) {
+      radiusListEl.innerHTML = "<h6 class='fw-semibold mt-3'>Cafés Within Radius:</h6>";
 
       const fc = normaliseToFeatureCollection(data);
       const features = fc?.features || [];
@@ -287,28 +298,24 @@ document.addEventListener("DOMContentLoaded", () => {
       if (features.length) {
         features.forEach(f => {
           const p = f.properties || {};
-          list.innerHTML += `
+          radiusListEl.innerHTML += `
             <div class="border-bottom pb-2 mb-2">
               <b>${p.name ?? "Unnamed Café"}</b><br>
               ${p.addr_street ?? ""} ${p.addr_city ?? ""}<br>
             </div>`;
         });
       } else {
-        list.innerHTML += "<p>No cafés found within this radius.</p>";
+        radiusListEl.innerHTML += "<p>No cafés found within this radius.</p>";
       }
-
-    } catch (err) {
-      console.error("Error loading cafés within radius:", err);
     }
-  });
-
+  }
 
   // ============================================================
-  // SHOW / HIDE COUNTIES LAYER
+  // TOGGLE COUNTIES LAYER
   // ============================================================
   let countiesVisible = true;
 
-  document.getElementById("toggle-counties-button").addEventListener("click", () => {
+  function toggleCounties() {
     if (countiesVisible) {
       map.removeLayer(countiesLayer);
     } else {
@@ -317,30 +324,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     countiesVisible = !countiesVisible;
 
-    document.getElementById("toggle-counties-button").textContent =
-      countiesVisible ? "Hide Counties" : "Show Counties";
-  });
-
-
-  // ============================================================
-  // ZOOM CONTROLS
-  // ============================================================
-  document.getElementById("toggle-zoom-in-button")
-    .addEventListener("click", () => map.setZoom(map.getZoom() + 1));
-
-  document.getElementById("toggle-zoom-out-button")
-    .addEventListener("click", () => map.setZoom(map.getZoom() - 1));
-
+    toggleCountiesBtn.textContent = countiesVisible
+      ? "Hide Counties"
+      : "Show Counties";
+  }
 
   // ============================================================
-  // GET COORDINATES — TEMPORARILY HIDE COUNTIES
+  // GET COORDINATES
   // ============================================================
-  document.getElementById("get-coordinates-button").addEventListener("click", () => {
+  function activateGetCoordinates() {
+    setStatus("Click anywhere on the map to select coordinates.");
 
-    document.getElementById("status").textContent =
-      "Click anywhere on the map to select coordinates.";
-
-    // Temporarily hide counties
+    // Hide counties while picking
     if (map.hasLayer(countiesLayer)) {
       map.removeLayer(countiesLayer);
     }
@@ -348,19 +343,65 @@ document.addEventListener("DOMContentLoaded", () => {
     function onMapClick(e) {
       const { lat, lng } = e.latlng;
 
-      document.getElementById("coords-display").textContent =
-        `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
+      setCoordsText(`Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`);
 
-      // Stop listening
       map.off("click", onMapClick);
-
-      // Restore counties
       map.addLayer(countiesLayer);
 
-      document.getElementById("status").textContent = "Coordinate selected.";
+      setStatus("Coordinate selected.");
     }
 
     map.on("click", onMapClick);
-  });
+  }
+
+  // ============================================================
+  // EVENT LISTENERS
+  // ============================================================
+  if (countySelect) {
+    countySelect.addEventListener("change", e => {
+      const countyName = e.target.value;
+      loadCafesInCounty(countyName);
+    });
+  }
+
+  if (closestBtn) {
+    closestBtn.addEventListener("click", findClosestCafes);
+  }
+
+  if (radiusBtn) {
+    radiusBtn.addEventListener("click", findCafesWithinRadius);
+  }
+
+  if (toggleCountiesBtn) {
+    toggleCountiesBtn.addEventListener("click", toggleCounties);
+  }
+
+  if (zoomInBtn) {
+    zoomInBtn.addEventListener("click", () =>
+      map.setZoom(map.getZoom() + 1)
+    );
+  }
+
+  if (zoomOutBtn) {
+    zoomOutBtn.addEventListener("click", () =>
+      map.setZoom(map.getZoom() - 1)
+    );
+  }
+
+  if (getCoordsBtn) {
+    getCoordsBtn.addEventListener("click", activateGetCoordinates);
+  }
+
+  // ============================================================
+  // INITIAL LOAD
+  // ============================================================
+  (async () => {
+    setStatus("Loading data…");
+    await Promise.all([
+      loadCounties(),
+      loadAllCafes(),
+    ]);
+    setStatus("Ready.");
+  })();
 
 });
