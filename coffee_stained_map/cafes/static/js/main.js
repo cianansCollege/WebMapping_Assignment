@@ -395,10 +395,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const fc = normaliseToFeatureCollection(data);
     fc.features.forEach(f => {
       const p = f.properties || {};
+      const [lng, lat] = f.geometry.coordinates;
       radiusListEl.innerHTML += `
         <div class="border-bottom pb-2 mb-2">
           <b>${p.name ?? "Unnamed Café"}</b><br>
           ${p.addr_street ?? ""} ${p.addr_city ?? ""}
+
+          <button class="btn btn-dark btn-sm route-btn"
+            data-lng="${lng}"
+            data-lat="${lat}">
+            Route to here
+          </button>
+
         </div>
       `;
     });
@@ -617,6 +625,43 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // ============================================================
+  // ROUTING FOR SIDEBAR LIST BUTTONS
+  // ============================================================
+  document.addEventListener("click", function (e) {
+    if (!e.target.classList.contains("route-btn")) return;
+
+    const lat = parseFloat(e.target.dataset.lat);
+    const lng = parseFloat(e.target.dataset.lng);
+
+    console.log("Routing from sidebar to café:", lat, lng);
+
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const userLat = pos.coords.latitude;
+        const userLng = pos.coords.longitude;
+
+        console.log("User location:", userLat, userLng);
+
+        // Remove previous route if exists
+        if (routingControl) map.removeControl(routingControl);
+
+        routingControl = L.Routing.control({
+          waypoints: [
+            L.latLng(userLat, userLng),
+            L.latLng(lat, lng)
+          ],
+          lineOptions: {
+            styles: [{ color: "blue", weight: 5 }]
+          },
+          show: false,
+          addWaypoints: false
+        }).addTo(map);
+      },
+      () => alert("Enable location services for routing."),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  });
 
   // ============================================================
   // EVENT LISTENERS
