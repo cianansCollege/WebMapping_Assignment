@@ -344,10 +344,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const fc = normaliseToFeatureCollection(data);
     fc.features.forEach(f => {
       const p = f.properties || {};
+      const [lng, lat] = f.geometry.coordinates;
       closestListEl.innerHTML += `
         <div class="border-bottom pb-2 mb-2">
           <b>${p.name ?? "Unnamed Café"}</b><br>
           ${p.addr_street ?? ""} ${p.addr_city ?? ""}
+
+          <button class="btn btn-dark btn-sm route-btn"
+            data-lng="${lng}"
+            data-lat="${lat}">
+            Route to here
+          </button>
+
         </div>
       `;
     });
