@@ -1,4 +1,4 @@
-console.log("main.js loaded");
+console.log("main.js loaded: test 1");
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM ready");
@@ -17,6 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const markersLayer = L.markerClusterGroup().addTo(map);
   const countiesLayer = L.layerGroup().addTo(map);
   let radiusCircle = null;
+  let routingControl = null;
+
 
   // Debug exposure
   window.map = map;
@@ -137,8 +139,13 @@ document.addEventListener("DOMContentLoaded", () => {
         layer.bindPopup(`
           <b>${p.name ?? "Unnamed Café"}</b><br>
           ${p.addr_street ?? ""}<br>
-          ${p.addr_city ?? ""}<br>
-          ${p.amenity ?? ""}
+          ${p.addr_city ?? ""}<br><br>
+
+          <button class="btn btn-dark btn-sm route-btn"
+            data-lng="${feature.geometry.coordinates[0]}"
+            data-lat="${feature.geometry.coordinates[1]}">
+            Route to here
+          </button>
         `);
       }
     });
@@ -558,6 +565,57 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("pick-on-map-closest")?.addEventListener("click", pickLocationForClosest);
   document.getElementById("pick-on-map-radius")?.addEventListener("click", pickLocationForRadius);
+
+  // ============================================================
+  // ROUTING: When popup opens, attach event listener to button
+  // ============================================================
+  map.on("popupopen", function (e) {
+    const btn = e.popup._contentNode.querySelector(".route-btn");
+
+    if (!btn) return;
+
+    btn.addEventListener("click", function () {
+      const lat = parseFloat(btn.dataset.lat);
+      const lng = parseFloat(btn.dataset.lng);
+
+      console.log("Routing to café:", lat, lng);
+
+      // Get user's location first
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const userLat = pos.coords.latitude;
+          const userLng = pos.coords.longitude;
+
+          console.log("User location:", userLat, userLng);
+
+          // Remove previous route
+          if (routingControl) {
+            map.removeControl(routingControl);
+          }
+
+          // Draw new route
+          routingControl = L.Routing.control({
+            waypoints: [
+              L.latLng(userLat, userLng),
+              L.latLng(lat, lng)
+            ],
+            lineOptions: {
+              styles: [{ color: "blue", weight: 5 }]
+            },
+            show: false,
+            addWaypoints: false
+          }).addTo(map);
+        },
+        err => {
+          alert("Enable location services to use routing.");
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 8000
+        }
+      );
+    });
+  });
 
 
   // ============================================================
