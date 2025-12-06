@@ -1,4 +1,4 @@
-console.log("main.js loaded: test 1");
+console.log("main.js loaded: test 2");
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM ready");
@@ -156,40 +156,40 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============================================================
   // LOAD COUNTIES + POPULATE DROPDOWN
   // ============================================================
-  async function loadCounties() {
-    console.log("Loading counties...");
-    const geojson = await fetchJSON("/api/counties/", "Load counties");
+    async function loadCounties() {
+    console.log("Loading counties from local file...");
+    const geojson = await fetchJSON("data/counties.json", "Load counties (offline)");
     if (!geojson) return;
 
     console.log("County FeatureCollection:", geojson);
 
     // Render polygons
     L.geoJSON(geojson, {
-      style: { color: "#ff8800", weight: 1, fillOpacity: 0 },
-      onEachFeature: (feature, layer) => {
+        style: { color: "#ff8800", weight: 1, fillOpacity: 0 },
+        onEachFeature: (feature, layer) => {
         console.log("County feature:", feature);
         const p = feature.properties || {};
         layer.bindPopup(`
-          <i>${p.gaeilge_name}</i><br>
-          <b>${p.english_name}, ${p.province}</b>
+            <i>${p.gaeilge_name}</i><br>
+            <b>${p.english_name}, ${p.province}</b>
         `);
-      }
+        }
     }).addTo(countiesLayer);
 
     // Populate dropdown
     console.log("Populating county dropdown...");
     geojson.features.forEach(f => {
-      const name = f.properties.english_name;
-      console.log("Adding county option:", name);
+        const name = f.properties.english_name;
+        console.log("Adding county option:", name);
 
-      const opt = document.createElement("option");
-      opt.value = name;
-      opt.textContent = name;
-      countySelect.appendChild(opt);
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        countySelect.appendChild(opt);
     });
 
     console.log("County dropdown complete.");
-  }
+    }
 
   // ============================================================
   // REAL-TIME USER TRACKING
@@ -275,8 +275,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // LOAD ALL CAFÉS
   // ============================================================
   async function loadAllCafes() {
-    console.log("Loading ALL cafés...");
-    const data = await fetchJSON("/api/cafes_osm/", "Load all cafés");
+    console.log("Loading ALL cafés from local file...");
+    const data = await fetchJSON("data/cafes.json", "Load all cafés (offline)");
     if (!data) return;
 
     addCafes(data);
