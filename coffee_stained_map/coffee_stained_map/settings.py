@@ -13,7 +13,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-09^y$dv@u-o16s@yzw11#!y1my%-5y16w25x^t#bg%9z$7x)za'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
+
 
 ALLOWED_HOSTS = [
     "webmapping-assignment.onrender.com",
