@@ -25,3 +25,4 @@ venv/
 # Docker
 *.pid
 *.bak
+.DS_Store
