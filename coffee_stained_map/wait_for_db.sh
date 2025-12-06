@@ -1,10 +1,14 @@
 #!/bin/sh
 
-echo "⏳ Waiting for database to be ready..."
+HOST="${DB_HOST}"
+PORT="${DB_PORT:-5432}"
 
-while ! nc -z db 5432; do
+echo "Waiting for PostgreSQL at $HOST:$PORT..."
+
+until nc -z "$HOST" "$PORT"; do
+  echo "PostgreSQL is unavailable - sleeping"
   sleep 1
 done
 
-echo " Database is ready. Starting Django..."
+echo "PostgreSQL is up!"
 exec "$@"
