@@ -18,6 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const countiesLayer = L.layerGroup().addTo(map);
   let radiusCircle = null;
   let routingControl = null;
+  let userLat = null;
+  let userLng = null;
 
 
   // Debug exposure
@@ -223,7 +225,9 @@ document.addEventListener("DOMContentLoaded", () => {
     navigator.geolocation.watchPosition(
       (pos) => {
         const lat = pos.coords.latitude;
+        userLat = lat;
         const lng = pos.coords.longitude;
+        userLng = lng;
         const accuracy = pos.coords.accuracy;
 
         console.log("GPS UPDATE:", { lat, lng, accuracy });
@@ -471,9 +475,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     navigator.geolocation.getCurrentPosition(
       pos => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        callback(lat, lng);
+        userLat = pos.coords.latitude;
+        userLng = pos.coords.longitude;
+        console.log("Browser location:", userLat, userLng);
+        callback(userLat, userLng);
       },
       err => {
         console.error("GPS error", err);
@@ -485,6 +490,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     );
   }
+
 
     // ============================================================
   // USE MY LOCATION (auto-fill inputs)
@@ -597,39 +603,24 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Routing to café:", lat, lng);
 
       // Get user's location first
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          const userLat = pos.coords.latitude;
-          const userLng = pos.coords.longitude;
+      if (userLat === null || userLng === null) {
+        alert("Location not available yet. Click 'Show My Live Location' or 'Use My Location' first.");
+        return;
+      }
 
-          console.log("User location:", userLat, userLng);
+      if (routingControl) {
+        map.removeControl(routingControl);
+      }
 
-          // Remove previous route
-          if (routingControl) {
-            map.removeControl(routingControl);
-          }
-
-          // Draw new route
-          routingControl = L.Routing.control({
-            waypoints: [
-              L.latLng(userLat, userLng),
-              L.latLng(lat, lng)
-            ],
-            lineOptions: {
-              styles: [{ color: "blue", weight: 5 }]
-            },
-            show: false,
-            addWaypoints: false
-          }).addTo(map);
-        },
-        err => {
-          alert("Enable location services to use routing.");
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 8000
-        }
-      );
+      routingControl = L.Routing.control({
+        waypoints: [
+          L.latLng(userLat, userLng),
+          L.latLng(lat, lng)
+        ],
+        lineOptions: { styles: [{ color: "blue", weight: 5 }] },
+        show: false,
+        addWaypoints: false
+      }).addTo(map);
     });
   });
 
@@ -644,31 +635,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     console.log("Routing from sidebar to café:", lat, lng);
 
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const userLat = pos.coords.latitude;
-        const userLng = pos.coords.longitude;
+    if (userLat === null || userLng === null) {
+      alert("Location not available yet. Click 'Show My Live Location' or 'Use My Location' first.");
+      return;
+    }
 
-        console.log("User location:", userLat, userLng);
+    if (routingControl) map.removeControl(routingControl);
 
-        // Remove previous route if exists
-        if (routingControl) map.removeControl(routingControl);
+    routingControl = L.Routing.control({
+      waypoints: [
+        L.latLng(userLat, userLng),
+        L.latLng(lat, lng)
+      ],
+      lineOptions: { styles: [{ color: "blue", weight: 5 }] },
+      show: false,
+      addWaypoints: false
+    }).addTo(map);
 
-        routingControl = L.Routing.control({
-          waypoints: [
-            L.latLng(userLat, userLng),
-            L.latLng(lat, lng)
-          ],
-          lineOptions: {
-            styles: [{ color: "blue", weight: 5 }]
-          },
-          show: false,
-          addWaypoints: false
-        }).addTo(map);
-      },
-      () => alert("Enable location services for routing."),
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
   });
 
   // ============================================================
