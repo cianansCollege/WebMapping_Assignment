@@ -1,4 +1,7 @@
 console.log("main.js loaded: test 2");
+console.log("APP ORIGIN:", window.location.origin);
+alert("APP ORIGIN = " + window.location.origin);
+
 const API_BASE = "https://webmapping-assignment.onrender.com/api";
 
 document.addEventListener("deviceready", () => {
@@ -19,6 +22,9 @@ document.addEventListener("deviceready", () => {
   const countiesLayer = L.layerGroup().addTo(map);
   let radiusCircle = null;
   let routingControl = null;
+  let allCafesLayer = null;
+  let closestCafesLayer = null;
+
 
 
   // Debug exposure
@@ -192,6 +198,25 @@ document.addEventListener("deviceready", () => {
     console.log("County dropdown complete.");
     }
 
+    function resetMap() {
+        console.log(" Resetting map...");
+
+        clearRadiusSearch();
+        clearClosestCafes();
+
+        // Clear routing line
+        if (routingControl) {
+            map.removeControl(routingControl);
+            routingControl = null;
+        }
+        
+        loadAllCafes();
+        map.closePopup();
+        clearLists();    // also clear sidebar lists
+    }
+
+
+
   // ============================================================
   // REAL-TIME USER TRACKING
   // ============================================================
@@ -362,6 +387,13 @@ document.addEventListener("deviceready", () => {
     });
   }
 
+  function clearClosestCafes() {
+    if (closestCafesLayer) {
+        map.removeLayer(closestCafesLayer);
+        closestCafesLayer = null;
+    }
+  }
+
   // ============================================================
   // CAFÉS WITHIN RADIUS
   // ============================================================
@@ -419,6 +451,13 @@ document.addEventListener("deviceready", () => {
         </div>
       `;
     });
+  }
+
+  function clearRadiusSearch() {
+    if (radiusCircle) {
+        map.removeLayer(radiusCircle);
+        radiusCircle = null;
+    }
   }
 
   // ============================================================
@@ -687,6 +726,7 @@ document.addEventListener("deviceready", () => {
   zoomOutBtn?.addEventListener("click", () => map.setZoom(map.getZoom() - 1));
   getCoordsBtn?.addEventListener("click", activateGetCoordinates);
   trackMeBtn?.addEventListener("click", toggleTracking);
+  document.getElementById("reset-btn").addEventListener("click", resetMap);
 
   // ============================================================
   // INITIAL LOAD
