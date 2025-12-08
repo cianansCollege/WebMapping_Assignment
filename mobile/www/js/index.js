@@ -1,4 +1,6 @@
 console.log("main.js loaded: test 2");
+const API_BASE = "https://webmapping-assignment.onrender.com";
+
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM ready");
@@ -295,7 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const url = `/api/cafes_in_county/${encodeURIComponent(countyName)}/`;
+    const url = `${API_BASE}/api/cafes_in_county/${encodeURIComponent(countyName)}/`;
     const data = await fetchJSON(url, "Load cafés in county");
 
     if (!data) return;
@@ -323,7 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const url = `/api/closest_cafes/?lat=${lat}&lng=${lng}`;
+    const url = `${API_BASE}/api/closest_cafes/?lat=${lat}&lng=${lng}`;
     const data = await fetchJSON(url, "Closest cafés");
     if (!data) return;
 
@@ -392,7 +394,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     map.setView([lat, lng], 14);
 
-    const url = `/api/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`;
+    const url = `${API_BASE}/api/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`;
     const data = await fetchJSON(url, "Cafés within radius");
     if (!data) return;
 

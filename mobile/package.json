@@ -15,7 +15,10 @@
   "cordova": {
     "platforms": [
       "android"
-    ]
+    ],
+    "plugins": {
+      "cordova-plugin-geolocation": {}
+    }
   },
   "devDependencies": {
     "cordova-android": "^14.0.1"

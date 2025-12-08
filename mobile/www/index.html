@@ -5,18 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Coffee Stained Map ☕</title>
 
-  <script src="cordova.js"></script>
-  <meta http-equiv="Content-Security-Policy" 
-      content="default-src * data: blob: filesystem: ws: wss:;
+   <meta http-equiv="Content-Security-Policy"
+      content="default-src * data: blob: filesystem:;
+               img-src * data: blob:;
+               style-src * 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net;
                script-src * 'unsafe-inline' 'unsafe-eval';
-               style-src * 'unsafe-inline';
-               img-src * data: content: blob:;
-               connect-src *;">
+               connect-src * https://webmapping-assignment.onrender.com https://router.project-osrm.org https://unpkg.com https://{s}.tile.openstreetmap.org data:;
+               media-src *;
+               frame-src *;">
 
 
 
     <!-- Custom CSS -->
-  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/index.css">
 
 
   <!-- Leaflet CSS -->
@@ -204,7 +205,7 @@
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
-  <script src="js/main.js"></script>
+  <script src="js/index.js"></script>
 
 
 </body>

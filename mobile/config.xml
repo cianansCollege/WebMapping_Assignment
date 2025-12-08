@@ -1,13 +1,38 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.example.coffeemap" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="com.example.coffeemap"
+        version="1.0.0"
+        xmlns="http://www.w3.org/ns/widgets"
+        xmlns:cdv="http://cordova.apache.org/ns/1.0">
+
     <name>CoffeeStainedMap</name>
-    <description>
-        A sample Apache Cordova application that responds to the deviceready event.
-    </description>
-    <author email="dev@cordova.apache.org" href="https://cordova.apache.org">
-        Apache Cordova Team
-    </author>
+    <description>Interactive café mapping app for Ireland.</description>
+    <author email="you@example.com">Coffee Stained Map</author>
+
     <content src="index.html" />
+
+    <!-- Allow remote API + tiles -->
+    <access origin="*" />
+    <allow-navigation href="*" />
+
+    <access origin="https://webmapping-assignment.onrender.com" />
+    <access origin="https://{s}.tile.openstreetmap.org" />
+    <access origin="https://tile.openstreetmap.org" />
+    <access origin="https://unpkg.com" />
+    <access origin="https://cdn.jsdelivr.net" />
+    <access origin="https://cdn-icons-png.flaticon.com" />
+    <access origin="https://router.project-osrm.org" />
+
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
+
+    <!-- Preferences -->
+    <preference name="AndroidXEnabled" value="true" />
+    <preference name="AllowUntrustedCerts" value="true" />
+    <preference name="AndroidInsecureFileModeEnabled" value="true" />
+    <preference name="Fullscreen" value="false" />
+    <preference name="Orientation" value="portrait" />
+
+    <!-- Plugins -->
+    <plugin name="cordova-plugin-geolocation" source="npm" />
+
 </widget>
