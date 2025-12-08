@@ -5,6 +5,7 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+
 # Install system dependencies needed by GeoDjango
 RUN apt-get update && apt-get install -y \
     binutils libproj-dev gdal-bin python3-gdal gcc libgeos-dev libgdal-dev postgis netcat-traditional \
@@ -24,6 +25,8 @@ COPY . /app/
 
 # Expose Django's port
 EXPOSE 8000
+
+ENV DJANGO_SETTINGS_MODULE=coffee_stained_map.settings
 
 # Run migrations, collectstatic, then start Gunicorn
 CMD ./wait_for_db.sh && \
