@@ -13,7 +13,7 @@ class CafeOSM(models.Model):
 
     class Meta:
         db_table = 'cafes_osm'
-        managed = False
+        managed = True
 
 
 class County(models.Model):
@@ -40,7 +40,7 @@ class County(models.Model):
     shape_length = models.FloatField(null=True, db_column="shape__length")
 
     class Meta:
-        managed = False
+        managed = True
         db_table = "counties"
 
 
