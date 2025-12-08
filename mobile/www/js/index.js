@@ -1,4 +1,7 @@
 console.log("main.js loaded: test 2");
+const API_BASE = (location.protocol === "file:")
+  ? "https://webmapping-assignment.onrender.com/api"
+  : "/api";
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM ready");
@@ -157,8 +160,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // LOAD COUNTIES + POPULATE DROPDOWN
   // ============================================================
     async function loadCounties() {
-    console.log("Loading counties from local file...");
-    const geojson = await fetchJSON("data/counties.json", "Load counties (offline)");
+    console.log("Loading counties...");
+    const geojson = await fetchJSON(`${API_BASE}/counties/`, "Load counties");
     if (!geojson) return;
 
     console.log("County FeatureCollection:", geojson);
@@ -275,8 +278,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // LOAD ALL CAFÉS
   // ============================================================
   async function loadAllCafes() {
-    console.log("Loading ALL cafés from local file...");
-    const data = await fetchJSON("data/cafes.json", "Load all cafés (offline)");
+    console.log("Loading ALL cafés...");
+    const data = await fetchJSON(`${API_BASE}/cafes_all/`, "Load all cafés");
     if (!data) return;
 
     addCafes(data);
@@ -295,7 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const url = `/api/cafes_in_county/${encodeURIComponent(countyName)}/`;
+    const url = `${API_BASE}/cafes_in_county/${encodeURIComponent(countyName)}/`;
     const data = await fetchJSON(url, "Load cafés in county");
 
     if (!data) return;
@@ -323,7 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const url = `/api/closest_cafes/?lat=${lat}&lng=${lng}`;
+    const url = `${API_BASE}/closest_cafes/?lat=${lat}&lng=${lng}`;
     const data = await fetchJSON(url, "Closest cafés");
     if (!data) return;
 
@@ -392,7 +395,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     map.setView([lat, lng], 14);
 
-    const url = `/api/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`;
+    const url = `${API_BASE}/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${radius}`;
     const data = await fetchJSON(url, "Cafés within radius");
     if (!data) return;
 

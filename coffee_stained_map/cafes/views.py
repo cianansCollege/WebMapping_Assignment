@@ -1,8 +1,7 @@
-# ------------------------------------------------------------
 # IMPORTS
-# ------------------------------------------------------------
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.db import connection
 
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
@@ -18,17 +17,15 @@ from .serializers import CafeOSMSerializer
 import json
 
 
-# ------------------------------------------------------------
+
 # FRONTEND PAGE
-# ------------------------------------------------------------
 def cafe_map(request):
     """Render the main map UI."""
     return render(request, "map.html")
 
 
-# ------------------------------------------------------------
+
 # VIEWSET — REST ENDPOINT FOR ALL CAFÉS (used by router)
-# ------------------------------------------------------------
 class CafeOSMViewSet(ReadOnlyModelViewSet):
     """
     ViewSet powering /api/cafes_osm/ when using DRF routers.
@@ -66,32 +63,27 @@ def cafes_all(request):
     return JsonResponse(data)
 
 
-# ------------------------------------------------------------
+
 # HELPER — Convert QuerySets to GeoJSON FeatureCollection
-# ------------------------------------------------------------
 def cafes_to_featurecollection(cafes):
     serializer = CafeOSMSerializer(cafes, many=True)
     return serializer.data 
 
 
-# ============================================================
-# CUSTOM API ENDPOINTS (FUNCTION-BASED VIEWS)
-# ============================================================
 
-# ------------------------------------------------------------
+# CUSTOM API ENDPOINTS (FUNCTION-BASED VIEWS)
+
 # GET ALL CAFÉS (GeoJSON) — manual endpoint
 # /api/cafes_osm/  (duplicate of ViewSet but needed for utility)
-# ------------------------------------------------------------
 @api_view(['GET'])
 def cafes_osm(request):
     cafes = CafeOSM.objects.all()
     return JsonResponse(cafes_to_featurecollection(cafes))
 
 
-# ------------------------------------------------------------
+
 # CAFÉS WITHIN RADIUS
 # /api/cafes_within_radius/?lat=..&lng=..&radius=..
-# ------------------------------------------------------------
 @api_view(['GET'])
 def cafes_within_radius(request):
     lat = float(request.GET.get("lat"))
@@ -107,10 +99,9 @@ def cafes_within_radius(request):
     return JsonResponse(cafes_to_featurecollection(cafes))
 
 
-# ------------------------------------------------------------
+
 # CLOSEST CAFÉS TO A POINT
 # /api/closest_cafes/?lat=..&lng=..&limit=5
-# ------------------------------------------------------------
 @api_view(['GET'])
 def cafes_closest(request):
     print("### USING THIS cafes_closest VIEW ###")
@@ -130,10 +121,9 @@ def cafes_closest(request):
     return JsonResponse(cafes_to_featurecollection(cafes))
 
 
-# ------------------------------------------------------------
+
 # CAFÉS NEAR A POINT (same logic as radius, different name)
 # /api/cafes_near/?lat=..&lng=..&radius=..
-# ------------------------------------------------------------
 @api_view(['GET'])
 def cafes_near(request):
     lat = float(request.GET.get("lat"))
@@ -149,43 +139,41 @@ def cafes_near(request):
     return JsonResponse(cafes_to_featurecollection(cafes))
 
 
-# ------------------------------------------------------------
+
 # ALL COUNTY POLYGONS (GeoJSON)
 # /api/counties/
-# ------------------------------------------------------------
 @api_view(['GET'])
 def counties(request):
-    counties = County.objects.all()
+
+    # SQL-based approach: MUCH faster than Django ORM for GeoJSON
+    sql = """
+        SELECT
+            COALESCE(NULLIF(english, ''), NULLIF(countyname,''), 
+                     NULLIF(county,''), 'Unknown County') AS english_name,
+
+            COALESCE(NULLIF(gaeilge,''), NULLIF(contae,''), 'Gan Ainm') AS gaeilge_name,
+
+            COALESCE(province, 'Unknown') AS province,
+
+            ST_AsGeoJSON(
+                ST_SimplifyPreserveTopology(geometry, 0.001)  -- adjust tolerance
+            ) AS geom
+        FROM counties;
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+
     features = []
-
-    for c in counties:
-
-        # Clean English name fallback
-        english = (
-            (c.english and c.english.strip()) or
-            (c.countyname and c.countyname.strip()) or
-            (c.county and c.county.strip()) or
-            "Unknown County"
-        ).title()
-
-        # Clean Gaeilge name fallback
-        gaeilge = (
-            (c.gaeilge and c.gaeilge.strip()) or
-            (c.contae and c.contae.strip()) or
-            "Gan Ainm"
-        ).title()
-
-        # Province fallback
-        province = (c.province or "Unknown").title()
-
-        # Assemble GeoJSON feature
+    for english, gaeilge, province, geom in rows:
         features.append({
             "type": "Feature",
-            "geometry": json.loads(c.geometry.geojson),
+            "geometry": json.loads(geom),
             "properties": {
-                "english_name": english,
-                "gaeilge_name": gaeilge,
-                "province": province,
+                "english_name": english.title(),
+                "gaeilge_name": gaeilge.title(),
+                "province": province.title(),
             }
         })
 
@@ -195,10 +183,9 @@ def counties(request):
     })
 
 
-# ------------------------------------------------------------
+
 # CAFÉS INSIDE A SPECIFIC COUNTY (polygon filter)
 # /api/cafes_in_county/<name>/
-# ------------------------------------------------------------
 @api_view(['GET'])
 def cafes_in_county(request, county_name):
 
