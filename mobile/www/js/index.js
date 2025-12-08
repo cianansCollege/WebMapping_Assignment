@@ -1,10 +1,8 @@
 console.log("main.js loaded: test 2");
-const API_BASE = (location.protocol === "file:")
-  ? "https://webmapping-assignment.onrender.com/api"
-  : "/api";
+const API_BASE = "https://webmapping-assignment.onrender.com/api";
 
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("DOM ready");
+document.addEventListener("deviceready", () => {
+  console.log("app starting");
 
   // ============================================================
   // MAP INITIALISATION

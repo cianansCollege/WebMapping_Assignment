@@ -40,11 +40,13 @@ INSTALLED_APPS = [
     'django.contrib.gis',#GeoDjango
     'rest_framework',#Django REST Framework
     'rest_framework_gis',# spatial serializers for GeoJSON
+    'corsheaders',
 
     'cafes',#my app
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -159,3 +161,11 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.BrowsableAPIRenderer",
     )
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "https://localhost",
+    "http://localhost",
+    "https://webmapping-assignment.onrender.com"
+]
+
+CORS_ALLOW_ALL_ORIGINS = True  # TEMP FOR DEBUG
