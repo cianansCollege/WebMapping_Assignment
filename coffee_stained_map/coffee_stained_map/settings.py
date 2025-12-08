@@ -80,20 +80,21 @@ WSGI_APPLICATION = 'coffee_stained_map.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 
-if os.environ.get("RENDER"):
-    # running on Render → use PostGIS
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.contrib.gis.db.backends.postgis",
-            "NAME": os.environ.get("DB_NAME"),
-            "USER": os.environ.get("DB_USER"),
-            "PASSWORD": os.environ.get("DB_PASSWORD"),
-            "HOST": os.environ.get("DB_HOST"),
-            "PORT": os.environ.get("DB_PORT", "5432"),
-        }
-    }
+if os.environ.get("USE_RENDER_DB") == "1":
+    print("⚠️ USING RENDER PRODUCTION DATABASE WITH POSTGIS BACKEND ⚠️")
+
+    db = dj_database_url.parse(
+        "postgresql://coffeestainedmap_user:yaJN0vL3bcD0qhl4k9bJv6tgpGIi9N1m@dpg-d4q5pjre5dus73ehpgjg-a.frankfurt-postgres.render.com/coffeestainedmap",
+        conn_max_age=600,
+        ssl_require=True,
+    )
+    db["ENGINE"] = "django.contrib.gis.db.backends.postgis"  # 🔥 critical fix
+
+    DATABASES = {"default": db}
+
+
 else:
-    # running anywhere else → use SQLite to save time
+    # Default LOCAL DB = SQLite
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
