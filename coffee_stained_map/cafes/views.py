@@ -37,6 +37,34 @@ class CafeOSMViewSet(ReadOnlyModelViewSet):
     queryset = CafeOSM.objects.all()
     serializer_class = CafeOSMSerializer
 
+def cafes_all(request):
+    cafes = (
+        CafeOSM.objects
+        .only("name", "addr_city", "addr_street", "addr_postcode", "geometry")
+        .values("name", "addr_city", "addr_street", "addr_postcode", "geometry")
+    )
+
+    features = []
+    for c in cafes:
+        geom = c["geometry"]
+        if geom:
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [geom.x, geom.y],
+                },
+                "properties": {
+                    "name": c["name"],
+                    "addr_city": c["addr_city"],
+                    "addr_street": c["addr_street"],
+                    "addr_postcode": c["addr_postcode"],
+                }
+            })
+
+    data = {"type": "FeatureCollection", "features": features}
+    return JsonResponse(data)
+
 
 # ------------------------------------------------------------
 # HELPER — Convert QuerySets to GeoJSON FeatureCollection

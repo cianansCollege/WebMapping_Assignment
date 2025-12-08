@@ -276,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============================================================
   async function loadAllCafes() {
     console.log("Loading ALL cafés...");
-    const data = await fetchJSON("/api/cafes_osm/", "Load all cafés");
+    const data = await fetchJSON("/api/cafes_all/", "Load all cafés");
     if (!data) return;
 
     addCafes(data);

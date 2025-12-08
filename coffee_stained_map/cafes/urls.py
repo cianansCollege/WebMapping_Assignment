@@ -7,7 +7,8 @@ from .views import (
     cafes_closest,
     cafes_within_radius,
     counties,
-    cafes_in_county
+    cafes_in_county,
+    cafes_all
 )
 
 router = DefaultRouter()
@@ -23,4 +24,5 @@ urlpatterns = [
     path('cafes_within_radius/', cafes_within_radius, name='cafes_within_radius'),
     path('counties/', counties, name='counties'),
     path("cafes_in_county/<str:county_name>/", cafes_in_county, name='cafes_in_county'),
+    path("cafes_all/", cafes_all, name='cafes_all'),
 ]
