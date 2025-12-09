@@ -1,6 +1,21 @@
 console.log("main.js loaded: test 1");
 
 document.addEventListener("DOMContentLoaded", () => {
+
+  let cachedUserLocation = null;
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      cachedUserLocation = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
+      };
+      console.log("User location cached:", cachedUserLocation);
+    },
+    err => console.warn("GPS not ready yet", err),
+    { enableHighAccuracy: true }
+  );
+
   console.log("DOM ready");
 
   // Map setup
@@ -295,16 +310,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Browser location helper
   function getBrowserLocation(cb) {
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        userLat = pos.coords.latitude;
-        userLng = pos.coords.longitude;
-        cb(userLat, userLng);
-      },
-      () => alert("Unable to get location"),
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
+    if (!cachedUserLocation) {
+      alert("Getting your location… try again in 1–2 seconds.");
+      return;
+    }
+
+    cb(cachedUserLocation.lat, cachedUserLocation.lng);
   }
+
 
   // Autofill “Use My Location”
   document.getElementById("use-my-location-closest")?.addEventListener("click", () => {
@@ -355,39 +368,40 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("pick-on-map-closest")?.addEventListener("click", pickLocationForClosest);
   document.getElementById("pick-on-map-radius")?.addEventListener("click", pickLocationForRadius);
 
-  // Routing (popup)
+    // Routing (popup)
     map.on("popupopen", e => {
       const btn = e.popup._contentNode.querySelector(".route-btn");
       if (!btn) return;
 
       btn.addEventListener("click", () => {
         console.log("Popup routing button clicked");
+
+        if (!cachedUserLocation) {
+          alert("Getting your location… try again.");
+          return;
+        }
+
+        const uLat = cachedUserLocation.lat;
+        const uLng = cachedUserLocation.lng;
+
         const lat = parseFloat(btn.dataset.lat);
         const lng = parseFloat(btn.dataset.lng);
 
-        navigator.geolocation.getCurrentPosition(
-          pos => {
-            const uLat = pos.coords.latitude;
-            const uLng = pos.coords.longitude;
+        if (routingControl) map.removeControl(routingControl);
 
-            if (routingControl) map.removeControl(routingControl);
-
-            routingControl = L.Routing.control({
-              waypoints: [
-                L.latLng(uLat, uLng),
-                L.latLng(lat, lng)
-              ],
-              show: false,
-              addWaypoints: false
-            }).addTo(map)
-            .on("routesfound", function(e) {
-                const route = e.routes[0];
-                const bounds = L.latLngBounds(route.coordinates);
-                map.fitBounds(bounds, { padding: [50, 50] });
-            });
-          },
-          () => alert("Enable location")
-        );
+        routingControl = L.Routing.control({
+          waypoints: [
+            L.latLng(uLat, uLng),
+            L.latLng(lat, lng)
+          ],
+          show: false,
+          addWaypoints: false
+        })
+        .addTo(map)
+        .on("routesfound", e => {
+          const bounds = L.latLngBounds(e.routes[0].coordinates);
+          map.fitBounds(bounds, { padding: [50, 50] });
+        });
       });
     });
 
@@ -395,33 +409,34 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("click", e => {
       if (!e.target.classList.contains("route-btn")) return;
 
+      if (!cachedUserLocation) {
+        alert("Getting your location… try again.");
+        return;
+      }
+
+      const uLat = cachedUserLocation.lat;
+      const uLng = cachedUserLocation.lng;
+
       const lat = parseFloat(e.target.dataset.lat);
       const lng = parseFloat(e.target.dataset.lng);
 
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          const uLat = pos.coords.latitude;
-          const uLng = pos.coords.longitude;
+      if (routingControl) map.removeControl(routingControl);
 
-          if (routingControl) map.removeControl(routingControl);
-
-          routingControl = L.Routing.control({
-            waypoints: [
-              L.latLng(uLat, uLng),
-              L.latLng(lat, lng)
-            ],
-            show: false,
-            addWaypoints: false
-          }).addTo(map)
-          .on("routesfound", function(e) {
-              const route = e.routes[0];
-              const bounds = L.latLngBounds(route.coordinates);
-              map.fitBounds(bounds, { padding: [50, 50] });
-          });
-        },
-        () => alert("Enable location")
-      );
+      routingControl = L.Routing.control({
+        waypoints: [
+          L.latLng(uLat, uLng),
+          L.latLng(lat, lng)
+        ],
+        show: false,
+        addWaypoints: false
+      })
+      .addTo(map)
+      .on("routesfound", e => {
+        const bounds = L.latLngBounds(e.routes[0].coordinates);
+        map.fitBounds(bounds, { padding: [50, 50] });
+      });
     });
+
 
   // Event listeners
   countySelect?.addEventListener("change", e => loadCafesInCounty(e.target.value));
