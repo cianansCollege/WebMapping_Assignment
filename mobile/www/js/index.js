@@ -1,12 +1,25 @@
-console.log("main.js loaded: test 2");
+console.log("main.js loaded: cordova build");
 console.log("APP ORIGIN:", window.location.origin);
 
 const API_BASE = "https://webmapping-assignment.onrender.com/api";
 
 document.addEventListener("deviceready", () => {
-  console.log("app starting");
+  console.log("Cordova app starting");
 
-  // Map setup
+  let cachedUserLocation = null;
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      cachedUserLocation = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
+      };
+      console.log("User location cached:", cachedUserLocation);
+    },
+    err => console.warn("GPS not ready yet", err),
+    { enableHighAccuracy: true }
+  );
+
   const map = L.map("map").setView([53.34731, -6.258946], 11);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 20,
@@ -15,54 +28,65 @@ document.addEventListener("deviceready", () => {
 
   const markersLayer = L.markerClusterGroup().addTo(map);
   const countiesLayer = L.layerGroup().addTo(map);
+  let libraryLayer = L.layerGroup().addTo(map);
 
   let radiusCircle = null;
   let routingControl = null;
-  let allCafesLayer = null;
-  let closestCafesLayer = null;
 
-  // Debug
-  window.map = map;
-  window.countiesLayer = countiesLayer;
+  // FAVOURITE ICON
+  const favouriteIcon = L.icon({
+    iconUrl: "img/heart.png",
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+    popupAnchor: [0, -28]
+  });
 
-  // DOM elements
-  const countySelect     = document.getElementById("county-select");
+  const libraryIcon = L.icon({
+    iconUrl: "img/library.png",
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -25]
+  });
+
+  // DOM references
+  const countySelect = document.getElementById("county-select");
   const toggleCountiesBtn = document.getElementById("toggle-counties-button");
-  const zoomInBtn        = document.getElementById("toggle-zoom-in-button");
-  const zoomOutBtn       = document.getElementById("toggle-zoom-out-button");
-  const getCoordsBtn     = document.getElementById("get-coordinates-button");
-  const statusEl         = document.getElementById("status");
-  const coordsDisplayEl  = document.getElementById("coords-display");
+  const zoomInBtn = document.getElementById("toggle-zoom-in-button");
+  const zoomOutBtn = document.getElementById("toggle-zoom-out-button");
+  const getCoordsBtn = document.getElementById("get-coordinates-button");
+  const statusEl = document.getElementById("status");
+  const coordsDisplayEl = document.getElementById("coords-display");
 
-  const closestBtn       = document.getElementById("closest_cafes_button");
-  const closestLatInput  = document.getElementById("latInput");
-  const closestLngInput  = document.getElementById("lngInput");
-  const closestListEl    = document.getElementById("cafe-list");
+  const closestBtn = document.getElementById("closest_cafes_button");
+  const closestLatInput = document.getElementById("latInput");
+  const closestLngInput = document.getElementById("lngInput");
+  const closestListEl = document.getElementById("cafe-list");
 
-  const radiusBtn        = document.getElementById("cafes_within_radius_button");
-  const radiusLatInput   = document.getElementById("latRadius");
-  const radiusLngInput   = document.getElementById("lngRadius");
-  const radiusInput      = document.getElementById("radiusInput");
-  const radiusListEl     = document.getElementById("radius-list");
+  const radiusBtn = document.getElementById("cafes_within_radius_button");
+  const radiusLatInput = document.getElementById("latRadius");
+  const radiusLngInput = document.getElementById("lngRadius");
+  const radiusInput = document.getElementById("radiusInput");
+  const radiusListEl = document.getElementById("radius-list");
 
-  const trackMeBtn       = document.getElementById("track-me-btn");
+  const trackMeBtn = document.getElementById("track-me-btn");
 
   // UI helpers
-  function setStatus(msg) {
-    if (statusEl) statusEl.textContent = msg;
+  function setStatus(msg) { if (statusEl) statusEl.textContent = msg; }
+  function setCoordsText(msg) { if (coordsDisplayEl) coordsDisplayEl.textContent = msg; }
+  function clearLists() { closestListEl.innerHTML = ""; radiusListEl.innerHTML = ""; }
+
+  // LocalStorage favourites
+  function loadFavourites() { return JSON.parse(localStorage.getItem("favouriteCafes") || "[]"); }
+  function saveFavourites(list) { localStorage.setItem("favouriteCafes", JSON.stringify(list)); }
+  function toggleFavourite(id) {
+    let favs = loadFavourites();
+    if (favs.includes(id)) favs = favs.filter(x => x !== id);
+    else favs.push(id);
+    saveFavourites(favs);
   }
 
-  function setCoordsText(msg) {
-    if (coordsDisplayEl) coordsDisplayEl.textContent = msg;
-  }
-
-  function clearLists() {
-    closestListEl.innerHTML = "";
-    radiusListEl.innerHTML = "";
-  }
-
-  // Fetch wrapper
-  async function fetchJSON(url, label = "Request") {
+  // Basic fetch wrapper
+  async function fetchJSON(url) {
     try {
       const res = await fetch(url);
       if (!res.ok) return null;
@@ -73,49 +97,69 @@ document.addEventListener("deviceready", () => {
     }
   }
 
-  // FC normaliser
-  function normaliseToFeatureCollection(data) {
+  function normaliseToFC(data) {
     if (data?.type === "FeatureCollection") return data;
     if (Array.isArray(data)) return { type: "FeatureCollection", features: data };
     return null;
   }
 
-  // Render cafés
+  // Add cafes to map
   function addCafes(data) {
     markersLayer.clearLayers();
-    const fc = normaliseToFeatureCollection(data);
+    const fc = normaliseToFC(data);
     if (!fc) return;
 
-    const geo = L.geoJSON(fc, {
-      pointToLayer: (_, ll) => L.marker(ll),
-      onEachFeature: (f, layer) => {
-        const p = f.properties || {};
+    const favourites = loadFavourites();
+
+    const geoLayer = L.geoJSON(fc, {
+      pointToLayer: (feature, latlng) => {
+        const id = feature.properties.id;
+        if (favourites.includes(id)) return L.marker(latlng, { icon: favouriteIcon });
+        return L.marker(latlng);
+      },
+
+      onEachFeature: (feature, layer) => {
+        const p = feature.properties;
+        const cafeId = p.id;
+
         layer.bindPopup(`
           <b>${p.name ?? "Unnamed Café"}</b><br>
           ${p.addr_street ?? ""}<br>${p.addr_city ?? ""}<br><br>
+
           <button class="btn btn-dark btn-sm route-btn"
-            data-lng="${f.geometry.coordinates[0]}"
-            data-lat="${f.geometry.coordinates[1]}">
+            data-lng="${feature.geometry.coordinates[0]}"
+            data-lat="${feature.geometry.coordinates[1]}">
             Route to here
+          </button>
+
+          <br><br>
+
+          <button class="btn btn-primary btn-sm library-btn"
+            data-lng="${feature.geometry.coordinates[0]}"
+            data-lat="${feature.geometry.coordinates[1]}">
+            Show Libraries Nearby
+          </button>
+
+          <br><br>
+
+          <button class="btn btn-sm favourite-btn"
+            data-id="${cafeId}">
+            ${favourites.includes(cafeId) ? "Remove Favourite" : "Add Favourite"}
           </button>
         `);
       }
     });
 
-    markersLayer.addLayer(geo);
+    markersLayer.addLayer(geoLayer);
   }
 
-  // Load counties + dropdown
+  // Load counties
   async function loadCounties() {
     const geojson = await fetchJSON(`${API_BASE}/counties/`);
     if (!geojson) return;
 
     L.geoJSON(geojson, {
-      style: { color: "#ff8800", weight: 1, fillOpacity: 0 },
-      onEachFeature: (f, layer) => {
-        const p = f.properties;
-        layer.bindPopup(`<i>${p.gaeilge_name}</i><br><b>${p.english_name}</b>`);
-      }
+      style: { color: "#ff8800", weight: 1, fillOpacity: 0 }
     }).addTo(countiesLayer);
 
     geojson.features.forEach(f => {
@@ -126,89 +170,41 @@ document.addEventListener("deviceready", () => {
     });
   }
 
-  // Reset map
-  function resetMap() {
-    clearRadiusSearch();
-    clearClosestCafes();
-    if (routingControl) map.removeControl(routingControl);
-
-    loadAllCafes();
-    map.closePopup();
-    clearLists();
-  }
-
-  // Live GPS
-  let tracking = false;
-  let userMarker = null;
-  let userAccuracyCircle = null;
-
-  function toggleTracking() {
-    tracking = !tracking;
-    trackMeBtn.textContent = tracking ? "Stop Tracking" : "Start Tracking Me";
-
-    if (!tracking) {
-      if (userMarker) map.removeLayer(userMarker);
-      if (userAccuracyCircle) map.removeLayer(userAccuracyCircle);
-      userMarker = userAccuracyCircle = null;
-      return;
-    }
-
-    navigator.geolocation.watchPosition(
-      pos => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        const acc = pos.coords.accuracy;
-
-        if (!userMarker) {
-          userMarker = L.marker([lat, lng]).addTo(map);
-        } else {
-          userMarker.setLatLng([lat, lng]);
-        }
-
-        if (!userAccuracyCircle) {
-          userAccuracyCircle = L.circle([lat, lng], {
-            radius: acc, color: "blue", fillOpacity: 0.15
-          }).addTo(map);
-        } else {
-          userAccuracyCircle.setLatLng([lat, lng]);
-          userAccuracyCircle.setRadius(acc);
-        }
-
-        map.setView([lat, lng], map.getZoom());
-      },
-      () => alert("Enable GPS"),
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  }
-
-  // Load all cafés
   async function loadAllCafes() {
     const data = await fetchJSON(`${API_BASE}/cafes_all/`);
     if (data) addCafes(data);
   }
 
-  // Filter by county
+  // Reset
+  function resetMap() {
+    if (radiusCircle) map.removeLayer(radiusCircle);
+    if (routingControl) map.removeControl(routingControl);
+    libraryLayer.clearLayers();
+    clearLists();
+    countySelect.value = "";
+    loadAllCafes();
+  }
+
+  // County filter
   async function loadCafesInCounty(name) {
     if (!name) return loadAllCafes();
     const data = await fetchJSON(`${API_BASE}/cafes_in_county/${encodeURIComponent(name)}/`);
     if (data) addCafes(data);
   }
 
-  // Closest cafés
+  // Closest cafes
   async function findClosestCafes() {
     const lat = parseFloat(closestLatInput.value);
     const lng = parseFloat(closestLngInput.value);
-    if (isNaN(lat) || isNaN(lng)) return alert("Invalid");
+    if (isNaN(lat) || isNaN(lng)) return alert("Invalid coordinates");
 
     const data = await fetchJSON(`${API_BASE}/closest_cafes/?lat=${lat}&lng=${lng}`);
     if (!data) return;
 
     addCafes(data);
-    map.setView([lat, lng], 16);
 
     closestListEl.innerHTML = "<h6>Closest Cafés:</h6>";
-
-    normaliseToFeatureCollection(data).features.forEach(f => {
+    normaliseToFC(data).features.forEach(f => {
       const p = f.properties;
       const [lng2, lat2] = f.geometry.coordinates;
       closestListEl.innerHTML += `
@@ -218,21 +214,18 @@ document.addEventListener("deviceready", () => {
             data-lat="${lat2}" data-lng="${lng2}">
             Route
           </button>
-        </div>`;
+        </div>
+      `;
     });
   }
 
-  function clearClosestCafes() {
-    if (closestCafesLayer) map.removeLayer(closestCafesLayer);
-    closestCafesLayer = null;
-  }
-
-  // Radius cafés
+  // Radius cafes
   async function findCafesWithinRadius() {
     const lat = parseFloat(radiusLatInput.value);
     const lng = parseFloat(radiusLngInput.value);
-    const r = parseFloat(radiusInput.value);
-    if (isNaN(lat) || isNaN(lng) || isNaN(r)) return alert("Invalid");
+    let r = parseFloat(radiusInput.value);
+    if (isNaN(lat) || isNaN(lng)) return alert("Invalid coordinates");
+    if (isNaN(r) || r <= 0) r = 2000;
 
     if (radiusCircle) map.removeLayer(radiusCircle);
 
@@ -244,12 +237,10 @@ document.addEventListener("deviceready", () => {
 
     const data = await fetchJSON(`${API_BASE}/cafes_within_radius/?lat=${lat}&lng=${lng}&radius=${r}`);
     if (!data) return;
-
     addCafes(data);
 
     radiusListEl.innerHTML = "<h6>Cafés Within Radius:</h6>";
-
-    normaliseToFeatureCollection(data).features.forEach(f => {
+    normaliseToFC(data).features.forEach(f => {
       const p = f.properties;
       const [lng2, lat2] = f.geometry.coordinates;
       radiusListEl.innerHTML += `
@@ -259,52 +250,43 @@ document.addEventListener("deviceready", () => {
             data-lat="${lat2}" data-lng="${lng2}">
             Route
           </button>
-        </div>`;
+        </div>
+      `;
     });
   }
 
-  function clearRadiusSearch() {
-    if (radiusCircle) map.removeLayer(radiusCircle);
-    radiusCircle = null;
-  }
-
-  // Toggle counties
+  // Counties toggle
   let countiesVisible = true;
   function toggleCounties() {
     if (countiesVisible) map.removeLayer(countiesLayer);
     else map.addLayer(countiesLayer);
-
     countiesVisible = !countiesVisible;
     toggleCountiesBtn.textContent = countiesVisible ? "Hide Counties" : "Show Counties";
   }
 
-  // Pick coordinates
+  // Coordinate picker
   function activateGetCoordinates() {
-    setStatus("Click on map");
-    if (map.hasLayer(countiesLayer)) map.removeLayer(countiesLayer);
-
+    setStatus("Tap on map");
     function handler(e) {
       setCoordsText(`Lat: ${e.latlng.lat.toFixed(5)}, Lng: ${e.latlng.lng.toFixed(5)}`);
       map.off("click", handler);
-      map.addLayer(countiesLayer);
-      setStatus("Coordinate selected");
+      setStatus("Selected");
     }
-
     map.on("click", handler);
   }
 
-  // Browser location
-  function getBrowserLocation(cb) {
+  // GPS helper
+  function getDeviceLocation(cb) {
     navigator.geolocation.getCurrentPosition(
       pos => cb(pos.coords.latitude, pos.coords.longitude),
-      () => alert("Unable to get location"),
+      () => alert("Cannot read location"),
       { enableHighAccuracy: true, timeout: 8000 }
     );
   }
 
   // Autofill buttons
   document.getElementById("use-my-location-closest")?.addEventListener("click", () => {
-    getBrowserLocation((lat, lng) => {
+    getDeviceLocation((lat, lng) => {
       closestLatInput.value = lat.toFixed(6);
       closestLngInput.value = lng.toFixed(6);
       findClosestCafes();
@@ -312,44 +294,12 @@ document.addEventListener("deviceready", () => {
   });
 
   document.getElementById("use-my-location-radius")?.addEventListener("click", () => {
-    getBrowserLocation((lat, lng) => {
+    getDeviceLocation((lat, lng) => {
       radiusLatInput.value = lat.toFixed(6);
       radiusLngInput.value = lng.toFixed(6);
     });
   });
 
-  // Pick-on-map (closest)
-  function pickLocationForClosest() {
-    if (map.hasLayer(countiesLayer)) map.removeLayer(countiesLayer);
-
-    function clickHandler(e) {
-      closestLatInput.value = e.latlng.lat.toFixed(6);
-      closestLngInput.value = e.latlng.lng.toFixed(6);
-      map.addLayer(countiesLayer);
-      map.off("click", clickHandler);
-      findClosestCafes();
-    }
-
-    map.on("click", clickHandler);
-  }
-
-  // Pick-on-map (radius)
-  function pickLocationForRadius() {
-    if (map.hasLayer(countiesLayer)) map.removeLayer(countiesLayer);
-
-    function clickHandler(e) {
-      radiusLatInput.value = e.latlng.lat.toFixed(6);
-      radiusLngInput.value = e.latlng.lng.toFixed(6);
-      map.addLayer(countiesLayer);
-      map.off("click", clickHandler);
-      findCafesWithinRadius();
-    }
-
-    map.on("click", clickHandler);
-  }
-
-  document.getElementById("pick-on-map-closest")?.addEventListener("click", pickLocationForClosest);
-  document.getElementById("pick-on-map-radius")?.addEventListener("click", pickLocationForRadius);
 
   // Routing (popup)
   map.on("popupopen", e => {
@@ -360,29 +310,23 @@ document.addEventListener("deviceready", () => {
       const lat = parseFloat(btn.dataset.lat);
       const lng = parseFloat(btn.dataset.lng);
 
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          const uLat = pos.coords.latitude;
-          const uLng = pos.coords.longitude;
+      getDeviceLocation((uLat, uLng) => {
+        if (routingControl) map.removeControl(routingControl);
 
-          if (routingControl) map.removeControl(routingControl);
-
-          routingControl = L.Routing.control({
-            waypoints: [
-              L.latLng(uLat, uLng),
-              L.latLng(lat, lng)
-            ],
-            show: false,
-            addWaypoints: false
-          }).addTo(map)
-          .on("routesfound", function(e) {
-              const route = e.routes[0];
-              const bounds = L.latLngBounds(route.coordinates);
-              map.fitBounds(bounds, { padding: [50, 50] });
-          });
-        },
-        () => alert("Enable location")
-      );
+        routingControl = L.Routing.control({
+          waypoints: [
+            L.latLng(uLat, uLng),
+            L.latLng(lat, lng)
+          ],
+          show: false,
+          addWaypoints: false
+        })
+        .addTo(map)
+        .on("routesfound", e => {
+          const bounds = L.latLngBounds(e.routes[0].coordinates);
+          map.fitBounds(bounds, { padding: [50, 50] });
+        });
+      });
     });
   });
 
@@ -393,29 +337,125 @@ document.addEventListener("deviceready", () => {
     const lat = parseFloat(e.target.dataset.lat);
     const lng = parseFloat(e.target.dataset.lng);
 
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const uLat = pos.coords.latitude;
-        const uLng = pos.coords.longitude;
+    getDeviceLocation((uLat, uLng) => {
+      if (routingControl) map.removeControl(routingControl);
 
-        if (routingControl) map.removeControl(routingControl);
+      routingControl = L.Routing.control({
+        waypoints: [
+          L.latLng(uLat, uLng),
+          L.latLng(lat, lng)
+        ],
+        show: false,
+        addWaypoints: false
+      }).addTo(map)
+      .on("routesfound", e => {
+        const bounds = L.latLngBounds(e.routes[0].coordinates);
+        map.fitBounds(bounds, { padding: [50, 50] });
+      });
+    });
+  });
 
-        routingControl = L.Routing.control({
-          waypoints: [
-            L.latLng(uLat, uLng),
-            L.latLng(lat, lng)
-          ],
-          show: false,
-          addWaypoints: false
-        }).addTo(map)
-        .on("routesfound", function(e) {
-            const route = e.routes[0];
-            const bounds = L.latLngBounds(route.coordinates);
-            map.fitBounds(bounds, { padding: [50, 50] });
-        });
-      },
-      () => alert("Enable location")
-    );
+
+  // Favourites click handler
+  document.addEventListener("click", e => {
+    const btn = e.target.closest(".favourite-btn");
+    if (!btn) return;
+
+    const id = parseInt(btn.dataset.id);
+    if (isNaN(id)) return;
+
+    toggleFavourite(id);
+    loadAllCafes();
+  });
+
+
+  // Library search via Overpass
+  async function fetchLibrariesNear(lat, lng) {
+    const query = `
+      [out:json][timeout:25];
+      (
+        node["amenity"="library"](around:10000, ${lat}, ${lng});
+        way["amenity"="library"](around:10000, ${lat}, ${lng});
+        relation["amenity"="library"](around:10000, ${lat}, ${lng});
+      );
+      out center;
+    `;
+
+    try {
+      const res = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: query
+      });
+      const json = await res.json();
+      return json.elements || [];
+    } catch {
+      alert("Library search failed");
+      return [];
+    }
+  }
+
+
+  // Library button handler
+  document.addEventListener("click", async e => {
+    const btn = e.target.closest(".library-btn");
+    if (!btn) return;
+
+    const cafeLat = parseFloat(btn.dataset.lat);
+    const cafeLng = parseFloat(btn.dataset.lng);
+
+    libraryLayer.clearLayers();
+
+    const libs = await fetchLibrariesNear(cafeLat, cafeLng);
+    if (!libs.length) {
+      alert("No libraries found nearby");
+      return;
+    }
+
+    // Draw library markers
+    libs.forEach(lib => {
+      const lat2 = lib.lat || lib.center?.lat;
+      const lng2 = lib.lon || lib.center?.lon;
+      if (!lat2 || !lng2) return;
+
+      L.marker([lat2, lng2], { icon: libraryIcon })
+        .addTo(libraryLayer)
+        .bindPopup(`<b>Library</b><br>${lib.tags?.name ?? "Unnamed"}`);
+    });
+
+    // Find nearest library
+    let nearest = null;
+    let nearestDist = Infinity;
+
+    libs.forEach(lib => {
+      const lat2 = lib.lat || lib.center?.lat;
+      const lng2 = lib.lon || lib.center?.lon;
+      if (!lat2 || !lng2) return;
+
+      const dist = L.latLng(cafeLat, cafeLng).distanceTo([lat2, lng2]);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = { lat: lat2, lng: lng2 };
+      }
+    });
+
+    if (!nearest) return;
+
+    // Route café → nearest library
+    if (routingControl) map.removeControl(routingControl);
+
+    routingControl = L.Routing.control({
+      waypoints: [
+        L.latLng(cafeLat, cafeLng),
+        L.latLng(nearest.lat, nearest.lng)
+      ],
+      show: false,
+      addWaypoints: false
+    })
+    .addTo(map)
+    .on("routesfound", e => {
+      const bounds = L.latLngBounds(e.routes[0].coordinates);
+      map.fitBounds(bounds, { padding: [50, 50] });
+    });
   });
 
   // Event listeners
@@ -426,14 +466,14 @@ document.addEventListener("deviceready", () => {
   zoomInBtn?.addEventListener("click", () => map.setZoom(map.getZoom() + 1));
   zoomOutBtn?.addEventListener("click", () => map.setZoom(map.getZoom() - 1));
   getCoordsBtn?.addEventListener("click", activateGetCoordinates);
-  trackMeBtn?.addEventListener("click", toggleTracking);
+  trackMeBtn?.addEventListener("click", () => toggleTracking());
   document.getElementById("reset-btn")?.addEventListener("click", resetMap);
 
   // Initial load
   (async () => {
-    setStatus("Loading…");
+    setStatus("Loading...");
     await loadCounties();
     await loadAllCafes();
-    setStatus("Ready.");
+    setStatus("Ready");
   })();
 });
