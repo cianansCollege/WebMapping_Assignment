@@ -239,8 +239,9 @@ document.addEventListener("DOMContentLoaded", () => {
   async function findCafesWithinRadius() {
     const lat = parseFloat(radiusLatInput.value);
     const lng = parseFloat(radiusLngInput.value);
-    const r = parseFloat(radiusInput.value);
-    if (isNaN(lat) || isNaN(lng) || isNaN(r)) return alert("Invalid radius");
+    let r = parseFloat(radiusInput.value);
+    if (isNaN(lat) || isNaN(lng)) return alert("Invalid radius");
+    if (isNaN(r) || r <= 0) r = 2000;
 
     radiusCircle = L.circle([lat, lng], {
       radius: r, color: "blue", fillOpacity: 0.1
@@ -392,7 +393,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Routing (sidebar)
     document.addEventListener("click", e => {
-      console.log("sidebar routing button clicked");
       if (!e.target.classList.contains("route-btn")) return;
 
       const lat = parseFloat(e.target.dataset.lat);
