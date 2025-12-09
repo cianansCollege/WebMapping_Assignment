@@ -1,122 +1,257 @@
-README.md including:
+# Coffee Stained Map
 
-    Application description and features
-    Setup instructions (local and cloud deployment)
-    Technology stack details
-    Screenshot(s) of running application
-    Known issues or limitations
-    API documentation (if applicable)
+Location-Based Services Application | Advanced Web Mapping CA2 | TU Dublin
 
-Application Description:
-    My project is a web application that lets a user view cafes nearby on an interactive map.
+## 1. Overview
 
-    Users can:
-        -View all cafes on the map.
-        -Filter cafes by quarter.
-        -Toggle visibility of the quarters.
-        -Find the 5 closest cafes from a given location.
-        -Search for cafes within a radius.
+Coffee Stained Map is a full-stack Location-Based Services (LBS) application that allows users to explore cafés across Ireland using an interactive map.
+It provides spatial search tools, mobile-friendly use, and a hybrid mobile deployment using Apache Cordova.
 
-Features:
-    Interactive Map - Leaflet map displaying cafes as markers and polygon quarters
-    Spatial Queries - You can find the nearest cafes, cafes within a polygon(I use quarters), or cafes within a radius.
-    GeoJSON API - REST endpoint return data in GeoJSON
-    Responsive - Used Bootstrap to make it useable on computer and mobile devices.
-    Docker Deployment - with Django, PostGIS and pgAdmin
+The project consists of three main components:
 
-Setup instructions (local and cloud deployment):
-    Local:
-        Requirements:
-            Python 3.11
-            PostgreSQL with PostGIS 
-        Steps:
-            1. Clone the repository : https://github.com/cianansCollege/WebMapping_Assignment
-                cd WebMapping_Assignment/coffee_stained_map
+1. Django + GeoDjango backend (REST API)
+2. PostgreSQL/PostGIS spatial database
+3. Leaflet-based web client and Cordova hybrid mobile app
 
-            2. Create a virtual environment
-                python3 -m venv .venv
-                source .venv/bin/activate
+The app supports live GPS tracking, routing, spatial filtering, and real-time map interaction.
 
-            3. Install dependencies
-                pip install -r requirements.txt
+---
 
-            4. Create database and enable PostGIS
-                psql -U postgres
-                CREATE DATABASE coffee_map;
-                \c coffee_map
-                CREATE EXTENSION postgis;
-                \q
+## 2. Features
 
-            5. Apply migrations and load data
-                python manage.py migrate
-                python manage.py loaddata quarters.json
-                python manage.py loaddata cafes.json
+### Core Functionality
 
-            6. Run server
-                python manage.py runserver  
+* Interactive map using Leaflet and OpenStreetMap
+* View all cafés stored in a PostGIS spatial database
+* Filter cafés by county
+* Toggle visibility of county polygons
+* Find the nearest cafés to a chosen point
+* Find cafés within a radius
+* Pick coordinates directly from the map
+* Use browser or mobile device GPS
+* Live tracking mode with dynamic updates
+* Routing from user's location to any café
+* Clustered café markers for easier browsing
 
-    Cloud:
-        1. Build and start all services
-            docker compose build
-            docker compose up
+### Mobile (Cordova) Features
 
-        2. Access the application
-            Django App → http://127.0.0.1:8000  
-            PgAdmin → http://127.0.0.1:8000/admin/
+* Fully responsive layout
+* Map optimised for small screens
+* Buttons for quick radius and nearest-café searches
+* Works offline after installation (PWA behaviour where supported)
 
+### Deployment
 
-API Documenation:
-    /api/cafes/ - GET Method to view all cafes in GeoJSON Format
+* Docker container for Django server
+* Cloud deployment via Render
+* API publicly accessible for the mobile app
 
-    /api/cafes_near/?lat=__&lng=__ - GET Method to view cafes within hardcoded distance to point given
+---
 
-    /api/closest_cafes/?lat=__&lng=__ - GET Method to view 5 closest cafes to point given
+## 3. Technology Stack
 
-    /api/within_quarter/<rank>/ - GET Method to view all cafes within a quarter
+### Frontend
 
-    /api/cafes_within_radius/?lat=__&lng=__&radius=__ - GET Method to view all cafes within radius of given point
+* Leaflet JS
+* Leaflet Routing Machine
+* Leaflet MarkerCluster
+* Bootstrap 5
+* Cordova hybrid mobile app
 
-    /api/quarters/ - GET Method to view all quarters
+### Backend
 
+* Django 4.2
+* Django REST Framework
+* GeoDjango spatial tools
+* Custom SQL + ORM-based spatial queries
 
-Technology Stack:
-    Frontend - Leaflet and Bootstrap
-    Backend - Django 4.2 and GeoDjango
-    Database - PostgreSQL and PostGIS
-    API - Django REST Framework
-    Deploymentv - Docker
+### Database
 
-Screenshots of running application:
-    -See AppFunctioningScreenshots.pdf
+* PostgreSQL
+* PostGIS (geometry handling, distance queries, polygon intersections)
 
+### Deployment
 
-Known Issues:
-    -Can't remove radius without refreshing page.
-    -List of cafes appears below map.
-    -No way for user to get current coordinates/click on screen for coordinates. Clunky design.
+* Docker
+* Render (cloud hosting)
 
-Architecture:
-    Frontend(Leaflet and Bootstrap)
-        Sends/Receieves data via HTTP
-    ↓
-    API Layer(Django REST Framework)
-        Executes the spatial queries
-    ↓
-    Database
-        Returns requested info
-    ↓
-    Docker(Web + Database + PgAdmin)
+---
 
-Test:
+## 4. Local Setup Instructions
+
+### Requirements
+
+* Python 3.11
+* PostgreSQL 15 or later
+* PostGIS extension
+* GDAL installed (required for GeoDjango)
+
+### Steps
+
+1. Clone the repository:
+
+   ```
+   git clone https://github.com/cianansCollege/WebMapping_Assignment
+   cd WebMapping_Assignment/coffee_stained_map
+   ```
+
+2. Create and activate a virtual environment:
+
+   ```
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+3. Install Python dependencies:
+
+   ```
+   pip install -r requirements.txt
+   ```
+
+4. Create a database and enable PostGIS:
+
+   ```
+   psql -U postgres
+   CREATE DATABASE coffee_map;
+   \c coffee_map
+   CREATE EXTENSION postgis;
+   ```
+
+5. Apply Django migrations:
+
+   ```
+   python manage.py migrate
+   ```
+
+6. Load required datasets (counties and cafés):
+
+   ```
+   python manage.py loaddata counties.json
+   python manage.py loaddata cafes.json
+   ```
+
+7. Run the development server:
+
+   ```
+   python manage.py runserver
+   ```
+
+---
+
+## 5. Cloud Deployment (Docker + Render)
+
+### Build Docker image locally
+
+```
+docker compose build
+docker compose up
+```
+
+### Access services
+
+* Django App: [http://localhost:8000](http://localhost:8000)
+* PgAdmin (if enabled): [http://localhost:8080](http://localhost:8080)
+
+### Deploy to Render
+
+* Push repo to GitHub
+* Create new Web Service
+* Use Docker deployment
+* Add environment variables (SECRET_KEY, DEBUG, database URL)
+* Render will build and run the container
+
+---
+
+## 6. API Documentation
+
+### Cafés
+
+| Endpoint                                            | Description                            |
+| --------------------------------------------------- | -------------------------------------- |
+| `/api/cafes_all/`                                   | All cafés as GeoJSON FeatureCollection |
+| `/api/closest_cafes/?lat=..&lng=..&limit=5`         | Closest cafés to a point               |
+| `/api/cafes_within_radius/?lat=..&lng=..&radius=..` | Cafés within a radius                  |
+| `/api/cafes_near/?lat=..&lng=..&radius=..`          | Alias of radius search                 |
+| `/api/cafes_osm/`                                   | Raw CaféOSM dataset (DRF ViewSet)      |
+
+### Counties
+
+| Endpoint                       | Description                           |
+| ------------------------------ | ------------------------------------- |
+| `/api/counties/`               | All counties with simplified geometry |
+| `/api/cafes_in_county/<name>/` | Cafés located inside a named county   |
+
+All endpoints return GeoJSON formatted responses.
+
+---
+
+## 7. Architecture Overview
+
+```
+Frontend (Leaflet, Bootstrap, Cordova)
+        |
+        v
+Django REST API (GeoDjango)
+        |
+        v
+PostgreSQL + PostGIS
+        |
+        v
+Cloud Deployment (Docker + Render)
+```
+
+* Spatial queries executed by PostGIS
+* API layer serializes data into GeoJSON
+* Leaflet renders markers, polygons, routes
+* Cordova bundles the web app for Android deployment
+
+---
+
+## 8. Screenshots
+
+Screenshots included in:
+
+```
+AppFunctioningScreenshots.pdf
+```
+
+---
+
+## 9. Known Issues or Limitations
+
+* Rendering many county polygons may be slow on older devices
+* Routing depends on third-party services (OSRM; availability may vary)
+* GPS accuracy will differ by device
+* The Cordova app requires device permissions for location
+* Minor UI spacing adjustments may be needed on very small screens
+
+---
+
+## 10. Testing
+
+Run Django tests:
+
+```
 docker exec -it coffee_stained_map-web-1 bash
 python manage.py test cafes
+```
 
+Connect to PostGIS:
 
-Connect to psql:
-docker exec -it coffee_stained_map-db-1 psql -U webmapping -d coffee_map     
+```
+docker exec -it coffee_stained_map-db-1 psql -U webmapping -d coffee_map
+```
 
+---
 
-Author:
-    Cianán Finn, TU856
+## 11. Author and Module Information
 
-Module: Advanced Web Mapping
+**Author:**
+Cianán Finn
+TU Dublin – Computer Science
+Student ID: C22393223
+
+**Module:**
+Advanced Web Mapping (CA2)
+
+---

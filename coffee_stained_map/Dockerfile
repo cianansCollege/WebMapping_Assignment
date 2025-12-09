@@ -1,10 +1,8 @@
 # Base image: Python 3.11 slim
 FROM python:3.11-slim
 
-# Prevent Python generating .pyc & buffering stdout
+# Prevent Python generating .pyc
 ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
 
 # Install system dependencies needed by GeoDjango
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -20,10 +18,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy Python dependencies first (to leverage Docker caching)
+# Copy Python dependencies first (to leverage Docker caching) - faster rebuilds
 COPY requirements.txt /app/
 
-# Install Python dependencies (must include gunicorn)
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy all project files into container

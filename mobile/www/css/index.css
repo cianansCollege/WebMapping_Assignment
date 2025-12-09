@@ -3,13 +3,16 @@ body {
   font-family: system-ui, sans-serif;
 }
 
+/* MAP SHOULD FILL MOBILE SCREEN */
 #map {
-  height: 80%;
-  width: 80%;
+  height: 75vh;
+  width: 100%;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0,0,0,0.15);
+  margin: 0 !important;
 }
 
+/* TOOL BOX STYLING */
 .tool-box {
   background: white;
   padding: 10px;
@@ -25,4 +28,32 @@ select, input, button {
 
 h1 {
   font-weight: 700;
+}
+
+@media (max-width: 768px) {
+
+  /* Map first on mobile */
+  .col-md-9 {
+    order: 1;
+  }
+
+  /* Tools after */
+  .col-md-3 {
+    order: 2;
+  }
+
+  /* Tighten layout */
+  .container {
+    padding: 8px !important;
+  }
+
+  /* Smaller buttons */
+  button, input, select {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+
+  body {
+    background: white;
+  }
 }

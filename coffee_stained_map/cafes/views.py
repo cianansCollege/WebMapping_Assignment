@@ -1,46 +1,38 @@
-# IMPORTS
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.db import connection
-
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
 from django.db.models import Q
-
 from rest_framework.decorators import api_view
 from rest_framework.viewsets import ReadOnlyModelViewSet
-
 from .models import CafeOSM, County
 from .serializers import CafeOSMSerializer
-
 import json
 
 
-
-# FRONTEND PAGE
+# FRONTEND: render main map template
 def cafe_map(request):
-    """Render the main map UI."""
     return render(request, "map.html")
 
 
-
-# VIEWSET — REST ENDPOINT FOR ALL CAFÉS (used by router)
+# VIEWSET: list all cafes (used by DRF router)
 class CafeOSMViewSet(ReadOnlyModelViewSet):
-    """
-    ViewSet powering /api/cafes_osm/ when using DRF routers.
-    This is the original endpoint the frontend was built around.
-    """
     queryset = CafeOSM.objects.all()
     serializer_class = CafeOSMSerializer
 
+
+# MANUAL ENDPOINT: all cafes as GeoJSON
 def cafes_all(request):
+    # Query only required fields for performance
     cafes = (
         CafeOSM.objects
         .only("name", "addr_city", "addr_street", "addr_postcode", "geometry")
         .values("name", "addr_city", "addr_street", "addr_postcode", "geometry")
     )
 
+    # Convert queryset rows into GeoJSON features
     features = []
     for c in cafes:
         geom = c["geometry"]
@@ -59,39 +51,34 @@ def cafes_all(request):
                 }
             })
 
-    data = {"type": "FeatureCollection", "features": features}
-    return JsonResponse(data)
+    return JsonResponse({"type": "FeatureCollection", "features": features})
 
 
-
-# HELPER — Convert QuerySets to GeoJSON FeatureCollection
+# Convert queryset of cafes into FeatureCollection via serializer
 def cafes_to_featurecollection(cafes):
     serializer = CafeOSMSerializer(cafes, many=True)
-    return serializer.data 
+    return serializer.data
 
 
-
-# CUSTOM API ENDPOINTS (FUNCTION-BASED VIEWS)
-
-# GET ALL CAFÉS (GeoJSON) — manual endpoint
-# /api/cafes_osm/  (duplicate of ViewSet but needed for utility)
-@api_view(['GET'])
-def cafes_osm(request):
-    cafes = CafeOSM.objects.all()
-    return JsonResponse(cafes_to_featurecollection(cafes))
+# GET ALL CAFES (old)
+# @api_view(['GET'])
+# def cafes_osm(request):
+#     cafes = CafeOSM.objects.all()
+#     return JsonResponse(cafes_to_featurecollection(cafes))
 
 
-
-# CAFÉS WITHIN RADIUS
-# /api/cafes_within_radius/?lat=..&lng=..&radius=..
+# CAFES WITHIN RADIUS OF A POINT
 @api_view(['GET'])
 def cafes_within_radius(request):
+    # Extract query parameters
     lat = float(request.GET.get("lat"))
     lng = float(request.GET.get("lng"))
     radius = float(request.GET.get("radius", 500))
 
+    # Construct point in WGS84
     pt = Point(lng, lat, srid=4326)
 
+    # Spatial filter using PostGIS distance function
     cafes = CafeOSM.objects.filter(
         geometry__distance_lte=(pt, D(m=radius))
     )
@@ -99,19 +86,16 @@ def cafes_within_radius(request):
     return JsonResponse(cafes_to_featurecollection(cafes))
 
 
-
-# CLOSEST CAFÉS TO A POINT
-# /api/closest_cafes/?lat=..&lng=..&limit=5
+# CLOSEST CAFES TO A POINT
 @api_view(['GET'])
 def cafes_closest(request):
-    print("### USING THIS cafes_closest VIEW ###")
-
     lat = float(request.GET.get("lat"))
     lng = float(request.GET.get("lng"))
     limit = int(request.GET.get("limit", 5))
 
     pt = Point(lng, lat, srid=4326)
 
+    # Annotate each cafe with distance and order by it
     cafes = (
         CafeOSM.objects
         .annotate(distance=Distance("geometry", pt))
@@ -121,9 +105,7 @@ def cafes_closest(request):
     return JsonResponse(cafes_to_featurecollection(cafes))
 
 
-
-# CAFÉS NEAR A POINT (same logic as radius, different name)
-# /api/cafes_near/?lat=..&lng=..&radius=..
+# ALIAS: cafes near a point (same as radius search)
 @api_view(['GET'])
 def cafes_near(request):
     lat = float(request.GET.get("lat"))
@@ -139,24 +121,18 @@ def cafes_near(request):
     return JsonResponse(cafes_to_featurecollection(cafes))
 
 
-
-# ALL COUNTY POLYGONS (GeoJSON)
-# /api/counties/
+# COUNTY POLYGONS AS GEOJSON
 @api_view(['GET'])
 def counties(request):
-
-    # SQL-based approach: MUCH faster than Django ORM for GeoJSON
+    # Raw SQL for fast GeoJSON extraction
     sql = """
         SELECT
             COALESCE(NULLIF(english, ''), NULLIF(countyname,''), 
                      NULLIF(county,''), 'Unknown County') AS english_name,
-
             COALESCE(NULLIF(gaeilge,''), NULLIF(contae,''), 'Gan Ainm') AS gaeilge_name,
-
             COALESCE(province, 'Unknown') AS province,
-
             ST_AsGeoJSON(
-                ST_SimplifyPreserveTopology(geometry, 0.001)  -- adjust tolerance
+                ST_SimplifyPreserveTopology(geometry, 0.001)
             ) AS geom
         FROM counties;
     """
@@ -165,6 +141,7 @@ def counties(request):
         cursor.execute(sql)
         rows = cursor.fetchall()
 
+    # Build FeatureCollection manually
     features = []
     for english, gaeilge, province, geom in rows:
         features.append({
@@ -177,19 +154,13 @@ def counties(request):
             }
         })
 
-    return JsonResponse({
-        "type": "FeatureCollection",
-        "features": features
-    })
+    return JsonResponse({"type": "FeatureCollection", "features": features})
 
 
-
-# CAFÉS INSIDE A SPECIFIC COUNTY (polygon filter)
-# /api/cafes_in_county/<name>/
+# CAFES INSIDE A SPECIFIC COUNTY POLYGON
 @api_view(['GET'])
 def cafes_in_county(request, county_name):
-
-    # Allow matches on English, Gaeilge, and dataset variants
+    # Match on multiple possible county name fields
     county = County.objects.filter(
         Q(english__iexact=county_name) |
         Q(countyname__iexact=county_name) |
@@ -201,6 +172,7 @@ def cafes_in_county(request, county_name):
     if county is None:
         return JsonResponse({"error": f"County '{county_name}' not found"}, status=404)
 
+    # Spatial filter using ST_Within
     cafes = CafeOSM.objects.filter(
         geometry__within=county.geometry
     )
