@@ -27,6 +27,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const markersLayer = L.markerClusterGroup().addTo(map);
   const countiesLayer = L.layerGroup().addTo(map);
+  let libraryLayer = L.layerGroup().addTo(map);
+
 
   // Heart icon for favourites
   const favouriteIcon = L.icon({
@@ -35,6 +37,14 @@ document.addEventListener("DOMContentLoaded", () => {
     iconAnchor: [15, 30],
     popupAnchor: [0, -28]
   });
+
+  const libraryIcon = L.icon({
+    iconUrl: "/static/img/library.png",
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -25]
+  });
+
 
 
   let radiusCircle = null;
@@ -94,11 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function toggleFavourite(cafeId) {
-      console.log("FAVOURITES: toggleFavourite called with OSM ID:", cafeId);
-
       let favs = loadFavourites();
       console.log("FAVOURITES: Current favourites before toggle:", favs);
-
       if (favs.includes(cafeId)) {
           console.log("FAVOURITES: Removing", cafeId);
           favs = favs.filter(id => id !== cafeId);
@@ -137,8 +144,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Render café markers
   function addCafes(data) {
-      console.log("CAFES: addCafes() called. Raw data:", data);
-
       markersLayer.clearLayers();
       const fc = normaliseToFeatureCollection(data);
 
@@ -148,7 +153,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const favourites = loadFavourites();
-      console.log("CAFES: Current favourites at render time:", favourites);
 
       const geoLayer = L.geoJSON(fc, {
           pointToLayer: (feature, latlng) => {
@@ -164,10 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
           onEachFeature: (feature, layer) => {
               const p = feature.properties;
               const cafeId = feature.properties.id;
-
-
-              console.log("CAFES: Setting popup for OSM ID:", cafeId);
-
               const isFavourite = favourites.includes(cafeId);
 
               layer.bindPopup(`
@@ -178,6 +178,13 @@ document.addEventListener("DOMContentLoaded", () => {
                       data-lng="${feature.geometry.coordinates[0]}"
                       data-lat="${feature.geometry.coordinates[1]}">
                       Route to here
+                  </button>
+                  <br><br>
+
+                  <button class="btn btn-primary btn-sm library-btn"
+                      data-lng="${feature.geometry.coordinates[0]}"
+                      data-lat="${feature.geometry.coordinates[1]}">
+                      Show Libraries Nearby
                   </button>
                   <br><br>
 
@@ -272,6 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (radiusCircle) map.removeLayer(radiusCircle);
     if (closestCafesLayer) map.removeLayer(closestCafesLayer);
     if (routingControl) map.removeControl(routingControl);
+    if (libraryLayer) map.removeLayer(libraryLayer);
 
     radiusCircle = closestCafesLayer = routingControl = null;
 
@@ -508,6 +516,34 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
+    async function fetchLibrariesNear(lat, lng) {
+        const query = `
+            [out:json][timeout:25];
+            (
+              node["amenity"="library"](around:10000, ${lat}, ${lng});
+              way["amenity"="library"](around:10000, ${lat}, ${lng});
+              relation["amenity"="library"](around:10000, ${lat}, ${lng});
+            );
+            out center;
+        `;
+
+        const url = "https://overpass-api.de/api/interpreter";
+
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                body: query
+            });
+
+            const json = await response.json();
+            return json.elements || [];
+        } catch (err) {
+            console.error("LIBRARIES: Overpass request failed:", err);
+            alert("Failed to load libraries withink 10km.");
+            return [];
+        }
+    }
+
 
   // Event listeners
   countySelect?.addEventListener("change", e => loadCafesInCounty(e.target.value));
@@ -521,34 +557,94 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("reset-btn")?.addEventListener("click", resetMap);
   
   document.addEventListener("click", e => {
-      console.log("FAVOURITES: Global click detected. Target:", e.target);
-
       const favBtn = e.target.closest(".favourite-btn");
-      console.log("FAVOURITES: closest('.favourite-btn') result:", favBtn);
 
       if (!favBtn) {
-          console.log("FAVOURITES: Click was NOT on a favourite button.");
           return;
       }
 
-      console.log("FAVOURITES: Favourite button clicked. Raw dataset:", favBtn.dataset);
-
       const rawId = favBtn.dataset.id;
-      console.log("FAVOURITES: raw ID:", rawId);
-
       const cafeId = parseInt(rawId);
-      console.log("FAVOURITES: Parsed OSM ID:", cafeId, "Type:", typeof cafeId);
 
       if (isNaN(cafeId)) {
-          console.log("FAVOURITES: ERROR: Parsed OSM ID is NaN.");
           return;
       }
 
       toggleFavourite(cafeId);
-
-      console.log("FAVOURITES: Reloading cafes...");
       loadAllCafes();
   });
+
+  document.addEventListener("click", async e => {
+      const btn = e.target.closest(".library-btn");
+      if (!btn) return;
+
+      const cafeLat = parseFloat(btn.dataset.lat);
+      const cafeLng = parseFloat(btn.dataset.lng);
+
+      // Clear previous library markers
+      libraryLayer.clearLayers();
+
+      // Fetch libraries
+      const libs = await fetchLibrariesNear(cafeLat, cafeLng);
+
+      if (!libs.length) {
+          alert("No libraries found nearby.");
+          return;
+      }
+
+      // put libraries on the map
+      libs.forEach(lib => {
+          const lat2 = lib.lat || lib.center?.lat;
+          const lng2 = lib.lon || lib.center?.lon;
+
+          if (!lat2 || !lng2) return;
+
+          L.marker([lat2, lng2], { icon: libraryIcon })
+              .addTo(libraryLayer)
+              .bindPopup(`<b>Library</b><br>${lib.tags?.name ?? "Unnamed"}`);
+      });
+
+      // Choose the closest library
+      let nearest = null;
+      let nearestDist = Infinity;
+
+      libs.forEach(lib => {
+          const lat2 = lib.lat || lib.center?.lat;
+          const lng2 = lib.lon || lib.center?.lon;
+          if (!lat2 || !lng2) return;
+
+          const dist = L.latLng(cafeLat, cafeLng).distanceTo([lat2, lng2]);
+          if (dist < nearestDist) {
+              nearestDist = dist;
+              nearest = { lat: lat2, lng: lng2, name: lib.tags?.name ?? "Library" };
+          }
+      });
+
+      if (!nearest) {
+          console.log("LIBRARIES: no valid nearest library found");
+          return;
+      }
+
+      // Remove old routing line if it exists
+      if (routingControl) map.removeControl(routingControl);
+
+      // Add new routing line from café to nearest library
+      routingControl = L.Routing.control({
+          waypoints: [
+              L.latLng(cafeLat, cafeLng),
+              L.latLng(nearest.lat, nearest.lng)
+          ],
+          show: false,
+          addWaypoints: false
+      })
+      .addTo(map)
+      .on("routesfound", e => {
+          const bounds = L.latLngBounds(e.routes[0].coordinates);
+          map.fitBounds(bounds, { padding: [50, 50] });
+      });
+  });
+
+
 
 
 
