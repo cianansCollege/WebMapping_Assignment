@@ -374,7 +374,12 @@ document.addEventListener("deviceready", () => {
             ],
             show: false,
             addWaypoints: false
-          }).addTo(map);
+          }).addTo(map)
+          .on("routesfound", function(e) {
+              const route = e.routes[0];
+              const bounds = L.latLngBounds(route.coordinates);
+              map.fitBounds(bounds, { padding: [50, 50] });
+          });
         },
         () => alert("Enable location")
       );
@@ -402,7 +407,12 @@ document.addEventListener("deviceready", () => {
           ],
           show: false,
           addWaypoints: false
-        }).addTo(map);
+        }).addTo(map)
+        .on("routesfound", function(e) {
+            const route = e.routes[0];
+            const bounds = L.latLngBounds(route.coordinates);
+            map.fitBounds(bounds, { padding: [50, 50] });
+        });
       },
       () => alert("Enable location")
     );

@@ -354,50 +354,72 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("pick-on-map-closest")?.addEventListener("click", pickLocationForClosest);
   document.getElementById("pick-on-map-radius")?.addEventListener("click", pickLocationForRadius);
 
-  // Routing via popup
-  map.on("popupopen", e => {
-    const btn = e.popup._contentNode.querySelector(".route-btn");
-    if (!btn) return;
+  // Routing (popup)
+    map.on("popupopen", e => {
+      const btn = e.popup._contentNode.querySelector(".route-btn");
+      if (!btn) return;
 
-    btn.addEventListener("click", () => {
-      if (userLat === null) {
-        alert("Enable location first");
-        return;
-      }
+      btn.addEventListener("click", () => {
+        const lat = parseFloat(btn.dataset.lat);
+        const lng = parseFloat(btn.dataset.lng);
 
-      const lat = parseFloat(btn.dataset.lat);
-      const lng = parseFloat(btn.dataset.lng);
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            const uLat = pos.coords.latitude;
+            const uLng = pos.coords.longitude;
 
-      if (routingControl) map.removeControl(routingControl);
+            if (routingControl) map.removeControl(routingControl);
 
-      routingControl = L.Routing.control({
-        waypoints: [L.latLng(userLat, userLng), L.latLng(lat, lng)],
-        show: false,
-        addWaypoints: false
-      }).addTo(map);
+            routingControl = L.Routing.control({
+              waypoints: [
+                L.latLng(uLat, uLng),
+                L.latLng(lat, lng)
+              ],
+              show: false,
+              addWaypoints: false
+            }).addTo(map)
+            .on("routesfound", function(e) {
+                const route = e.routes[0];
+                const bounds = L.latLngBounds(route.coordinates);
+                map.fitBounds(bounds, { padding: [50, 50] });
+            });
+          },
+          () => alert("Enable location")
+        );
+      });
     });
-  });
 
-  // Routing via sidebar list
-  document.addEventListener("click", e => {
-    if (!e.target.classList.contains("route-btn")) return;
+    // Routing (sidebar)
+    document.addEventListener("click", e => {
+      if (!e.target.classList.contains("route-btn")) return;
 
-    if (userLat === null) {
-      alert("Enable location first");
-      return;
-    }
+      const lat = parseFloat(e.target.dataset.lat);
+      const lng = parseFloat(e.target.dataset.lng);
 
-    const lat = parseFloat(e.target.dataset.lat);
-    const lng = parseFloat(e.target.dataset.lng);
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const uLat = pos.coords.latitude;
+          const uLng = pos.coords.longitude;
 
-    if (routingControl) map.removeControl(routingControl);
+          if (routingControl) map.removeControl(routingControl);
 
-    routingControl = L.Routing.control({
-      waypoints: [L.latLng(userLat, userLng), L.latLng(lat, lng)],
-      show: false,
-      addWaypoints: false
-    }).addTo(map);
-  });
+          routingControl = L.Routing.control({
+            waypoints: [
+              L.latLng(uLat, uLng),
+              L.latLng(lat, lng)
+            ],
+            show: false,
+            addWaypoints: false
+          }).addTo(map)
+          .on("routesfound", function(e) {
+              const route = e.routes[0];
+              const bounds = L.latLngBounds(route.coordinates);
+              map.fitBounds(bounds, { padding: [50, 50] });
+          });
+        },
+        () => alert("Enable location")
+      );
+    });
 
   // Event listeners
   countySelect?.addEventListener("change", e => loadCafesInCounty(e.target.value));
