@@ -360,6 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!btn) return;
 
       btn.addEventListener("click", () => {
+        console.log("Popup routing button clicked");
         const lat = parseFloat(btn.dataset.lat);
         const lng = parseFloat(btn.dataset.lng);
 
@@ -391,6 +392,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Routing (sidebar)
     document.addEventListener("click", e => {
+      console.log("sidebar routing button clicked");
       if (!e.target.classList.contains("route-btn")) return;
 
       const lat = parseFloat(e.target.dataset.lat);
