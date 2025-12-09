@@ -7,9 +7,15 @@ ENV PYTHONUNBUFFERED 1
 
 
 # Install system dependencies needed by GeoDjango
-RUN apt-get update && apt-get install -y \
-    binutils libproj-dev gdal-bin python3-gdal gcc libgeos-dev libgdal-dev postgis netcat-traditional \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gdal-bin \
+    libgdal-dev \
+    libgeos-dev \
+    libproj-dev \
+    python3-gdal \
+    gcc \
+    netcat-traditional \
+  && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory inside the container
 WORKDIR /app
