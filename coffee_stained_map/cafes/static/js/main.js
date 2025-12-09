@@ -28,6 +28,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const markersLayer = L.markerClusterGroup().addTo(map);
   const countiesLayer = L.layerGroup().addTo(map);
 
+  // Heart icon for favourites
+  const favouriteIcon = L.icon({
+    iconUrl: "/static/img/heart.png",   // you must add this file
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+    popupAnchor: [0, -28]
+  });
+
+
   let radiusCircle = null;
   let routingControl = null;
   let userLat = null;
@@ -76,6 +85,34 @@ document.addEventListener("DOMContentLoaded", () => {
     if (radiusListEl) radiusListEl.innerHTML = "";
   }
 
+  function loadFavourites() {
+    return JSON.parse(localStorage.getItem("favouriteCafes") || "[]");
+  }
+
+  function saveFavourites(list) {
+    localStorage.setItem("favouriteCafes", JSON.stringify(list));
+  }
+
+  function toggleFavourite(cafeId) {
+      console.log("FAVOURITES: toggleFavourite called with OSM ID:", cafeId);
+
+      let favs = loadFavourites();
+      console.log("FAVOURITES: Current favourites before toggle:", favs);
+
+      if (favs.includes(cafeId)) {
+          console.log("FAVOURITES: Removing", cafeId);
+          favs = favs.filter(id => id !== cafeId);
+      } else {
+          console.log("FAVOURITES: Adding", cafeId);
+          favs.push(cafeId);
+      }
+
+      saveFavourites(favs);
+      console.log("FAVOURITES: Updated favourites saved:", favs);
+  }
+
+
+
   // Fetch wrapper with logging @@@@
   async function fetchJSON(url, label = "Request") {
     console.log(`FETCH → ${url}`);
@@ -100,28 +137,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Render café markers
   function addCafes(data) {
-    markersLayer.clearLayers();
-    const fc = normaliseToFeatureCollection(data);
-    if (!fc) return;
+      console.log("CAFES: addCafes() called. Raw data:", data);
 
-    const geoLayer = L.geoJSON(fc, {
-      pointToLayer: (_, latlng) => L.marker(latlng),
-      onEachFeature: (feature, layer) => {
-        const p = feature.properties || {};
-        layer.bindPopup(`
-          <b>${p.name ?? "Unnamed Café"}</b><br>
-          ${p.addr_street ?? ""}<br>${p.addr_city ?? ""}<br><br>
-          <button class="btn btn-dark btn-sm route-btn"
-            data-lng="${feature.geometry.coordinates[0]}"
-            data-lat="${feature.geometry.coordinates[1]}">
-            Route to here
-          </button>
-        `);
+      markersLayer.clearLayers();
+      const fc = normaliseToFeatureCollection(data);
+
+      if (!fc) {
+          console.log("CAFES: FeatureCollection invalid, aborting.");
+          return;
       }
-    });
 
-    markersLayer.addLayer(geoLayer);
+      const favourites = loadFavourites();
+      console.log("CAFES: Current favourites at render time:", favourites);
+
+      const geoLayer = L.geoJSON(fc, {
+          pointToLayer: (feature, latlng) => {
+              const cafeId = feature.properties.id;
+              const isFavourite = favourites.includes(cafeId);
+
+              if (isFavourite) {
+                  return L.marker(latlng, { icon: favouriteIcon });
+              }
+              return L.marker(latlng);
+          },
+
+          onEachFeature: (feature, layer) => {
+              const p = feature.properties;
+              const cafeId = feature.properties.id;
+
+
+              console.log("CAFES: Setting popup for OSM ID:", cafeId);
+
+              const isFavourite = favourites.includes(cafeId);
+
+              layer.bindPopup(`
+                  <b>${p.name ?? "Unnamed Café"}</b><br>
+                  ${p.addr_street ?? ""}<br>${p.addr_city ?? ""}<br><br>
+
+                  <button class="btn btn-dark btn-sm route-btn"
+                      data-lng="${feature.geometry.coordinates[0]}"
+                      data-lat="${feature.geometry.coordinates[1]}">
+                      Route to here
+                  </button>
+                  <br><br>
+
+                  <button class="btn btn-sm favourite-btn"
+                      data-id="${cafeId}">
+                      ${isFavourite ? "Remove Favourite" : "Add Favourite"}
+                  </button>
+              `);
+          }
+      });
+
+      markersLayer.addLayer(geoLayer);
   }
+
+
 
   // Load county polygons + dropdown
   async function loadCounties() {
@@ -184,7 +255,7 @@ document.addEventListener("DOMContentLoaded", () => {
           userAccuracyCircle.setRadius(acc);
         }
 
-        map.setView([lat, lng], map.getZoom());
+        map.setView([lat, lng], 13);
       },
       () => alert("Enable GPS to track location.")
     );
@@ -448,6 +519,38 @@ document.addEventListener("DOMContentLoaded", () => {
   getCoordsBtn?.addEventListener("click", activateGetCoordinates);
   trackMeBtn?.addEventListener("click", toggleTracking);
   document.getElementById("reset-btn")?.addEventListener("click", resetMap);
+  
+  document.addEventListener("click", e => {
+      console.log("FAVOURITES: Global click detected. Target:", e.target);
+
+      const favBtn = e.target.closest(".favourite-btn");
+      console.log("FAVOURITES: closest('.favourite-btn') result:", favBtn);
+
+      if (!favBtn) {
+          console.log("FAVOURITES: Click was NOT on a favourite button.");
+          return;
+      }
+
+      console.log("FAVOURITES: Favourite button clicked. Raw dataset:", favBtn.dataset);
+
+      const rawId = favBtn.dataset.id;
+      console.log("FAVOURITES: raw ID:", rawId);
+
+      const cafeId = parseInt(rawId);
+      console.log("FAVOURITES: Parsed OSM ID:", cafeId, "Type:", typeof cafeId);
+
+      if (isNaN(cafeId)) {
+          console.log("FAVOURITES: ERROR: Parsed OSM ID is NaN.");
+          return;
+      }
+
+      toggleFavourite(cafeId);
+
+      console.log("FAVOURITES: Reloading cafes...");
+      loadAllCafes();
+  });
+
+
 
   // Initial load
   (async () => {

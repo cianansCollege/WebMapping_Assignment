@@ -25,14 +25,11 @@ class CafeOSMViewSet(ReadOnlyModelViewSet):
 
 # MANUAL ENDPOINT: all cafes as GeoJSON
 def cafes_all(request):
-    # Query only required fields for performance
     cafes = (
         CafeOSM.objects
-        .only("name", "addr_city", "addr_street", "addr_postcode", "geometry")
-        .values("name", "addr_city", "addr_street", "addr_postcode", "geometry")
+        .values("ogc_fid", "name", "addr_city", "addr_street", "addr_postcode", "geometry")
     )
 
-    # Convert queryset rows into GeoJSON features
     features = []
     for c in cafes:
         geom = c["geometry"]
@@ -44,6 +41,7 @@ def cafes_all(request):
                     "coordinates": [geom.x, geom.y],
                 },
                 "properties": {
+                    "id": c["ogc_fid"],   # <-- JSON ID is now correct
                     "name": c["name"],
                     "addr_city": c["addr_city"],
                     "addr_street": c["addr_street"],
@@ -51,7 +49,11 @@ def cafes_all(request):
                 }
             })
 
-    return JsonResponse({"type": "FeatureCollection", "features": features})
+    return JsonResponse({
+        "type": "FeatureCollection",
+        "features": features
+    })
+
 
 
 # Convert queryset of cafes into FeatureCollection via serializer
