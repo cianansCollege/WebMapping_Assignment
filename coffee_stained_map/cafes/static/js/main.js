@@ -157,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
       toggleCountiesBtn.textContent = "Hide Counties";
     }
 
-    map.setView([53.4, -7.8], 6);
+    map.setView([53.4, -7.8], 8);
     map.closePopup();
   }
 

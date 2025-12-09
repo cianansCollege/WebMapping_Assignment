@@ -1,6 +1,4 @@
 console.log("main.js loaded");
-console.log("APP ORIGIN:", window.location.origin);
-alert("APP ORIGIN = " + window.location.origin);
 
 const API_BASE = "https://webmapping-assignment.onrender.com/api";
 
